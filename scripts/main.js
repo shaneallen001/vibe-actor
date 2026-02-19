@@ -1,0 +1,64 @@
+/**
+ * Vibe Actor Module
+ * Main entry point for actor generation and adjustment features.
+ */
+
+import { registerActorModuleSettings } from "./settings.js";
+import { addVibeActorButton } from "./ui/actor-button-injector.js";
+import { VibeActorDialog } from "./ui/dialogs/vibe-actor-dialog.js";
+import { ImageGenerator } from "./ui/image-generator.js";
+import { VibeAdjustmentDialog } from "./ui/dialogs/vibe-adjustment-dialog.js";
+
+Hooks.once("ready", () => {
+  if (game.system.id !== "dnd5e") {
+    console.warn("Vibe Actor: This module requires the dnd5e system.");
+    return;
+  }
+
+  registerActorModuleSettings();
+});
+
+Hooks.on("renderSidebarTab", (app, html) => {
+  if (app.tabName === "actors") {
+    requestAnimationFrame(() => {
+      addVibeActorButton(app, html, () => VibeActorDialog.show());
+    });
+  }
+});
+
+Hooks.on("renderActorDirectory", (app, html) => {
+  requestAnimationFrame(() => {
+    addVibeActorButton(app, html, () => VibeActorDialog.show());
+  });
+});
+
+Hooks.on("getHeaderControlsApplicationV2", (app, controls) => {
+  if (!game.user.isGM) return;
+
+  if (app instanceof foundry.applications.sheets.ActorSheetV2) {
+    const actor = app.document;
+    if (!actor) return;
+
+    controls.push({
+      icon: "fas fa-magic",
+      label: "Vibe Image",
+      action: "vibeImage",
+      onClick: async () => {
+        try {
+          await ImageGenerator.generateImage(actor);
+        } catch (error) {
+          console.error("Vibe Actor | Error in Vibe Image handler:", error);
+        }
+      }
+    });
+
+    controls.push({
+      icon: "fas fa-wrench",
+      label: "Vibe Adjust",
+      action: "vibeAdjustActor",
+      onClick: () => {
+        new VibeAdjustmentDialog(actor).render(true);
+      }
+    });
+  }
+});
