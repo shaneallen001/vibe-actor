@@ -1,23 +1,24 @@
-<form class="vibe-adjustment-form">
+<form class="vibe-dialog-form vibe-adjustment-form">
     <div class="form-group">
-        <p class="notes">
+        <p class="actor-name-hint">
             What changes would you like to make to <strong>{{name}}</strong>?
         </p>
-        <p class="hint">
+        <p class="hint-text">
             Examples: "Make it a level 5 boss", "Add fire immunity and a flaming sword", "Turn it into a zombie"
         </p>
     </div>
 
     <div class="form-group">
-        <textarea name="prompt" placeholder="Desribe your changes..." style="min-height: 100px;"></textarea>
+        <label for="adjustment-prompt">Instructions</label>
+        <textarea name="prompt" id="adjustment-prompt" placeholder="Describe your changes..." rows="4"></textarea>
     </div>
 
-    <footer class="sheet-footer flexrow">
-        <button type="button" class="cancel-button">
+    <div class="vibe-dialog-footer">
+        <button type="button" class="vibe-btn vibe-btn-cancel cancel-button">
             <i class="fas fa-times"></i> Cancel
         </button>
-        <button type="button" class="adjust-button default">
+        <button type="button" class="vibe-btn vibe-btn-primary adjust-button default">
             <i class="fas fa-magic"></i> Adjust {{name}}
         </button>
-    </footer>
+    </div>
 </form>
