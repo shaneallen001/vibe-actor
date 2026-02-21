@@ -4,99 +4,98 @@
  */
 
 export async function generateAndSetActorImage(actor, apiKey, { prompt, size, background, partialImages, saveDir, storageSrc, abortSignal }) {
-    const OPENAI_MODEL = "gpt-image-1";
+    const OPENAI_MODEL = "dall-e-3";
 
     const resp = await fetch("https://api.openai.com/v1/images/generations", {
         method: "POST",
         headers: {
             "Authorization": `Bearer ${apiKey}`,
             "Content-Type": "application/json",
-            "Accept": "text/event-stream"
+            "Accept": "application/json"
         },
         body: JSON.stringify({
             model: OPENAI_MODEL,
             prompt,
             size,
-            background,
-            stream: true,
-            partial_images: partialImages,
-            n: 1
+            n: 1,
+            response_format: "b64_json"
         }),
         signal: abortSignal
     });
 
-    if (!resp.ok && resp.status !== 200) {
-        const text = await resp.text().catch(() => "");
-        throw new Error(`OpenAI error ${resp.status}: ${text || resp.statusText}`);
+    if (!resp.ok) {
+        const data = await resp.json().catch(() => ({}));
+        throw new Error(`OpenAI error ${resp.status}: ${data?.error?.message || resp.statusText}`);
     }
 
-    if (!resp.body || !resp.headers.get("content-type")?.includes("text/event-stream")) {
-        const data = await resp.json();
-        const item = data?.data?.[0];
-        const b64 = item?.b64_json;
-        const url = item?.url;
-        const blob = b64 ? b64ToBlob(b64, "image/png") : await (await fetch(url)).blob();
+    const data = await resp.json();
+    const item = data?.data?.[0];
+    const b64 = item?.b64_json;
+    const url = item?.url;
+
+    if (b64) {
+        const blob = b64ToBlob(b64, "image/png");
         await saveAndSetActor(actor, blob, "final", saveDir, storageSrc);
-        return;
-    }
-
-    const reader = resp.body.getReader();
-    const decoder = new TextDecoder("utf-8");
-    let buffer = "", partialIndex = 0, finalDone = false;
-
-    while (true) {
-        const { value, done } = await reader.read();
-        if (done) break;
-        buffer += decoder.decode(value, { stream: true });
-
-        const parts = buffer.split("\n\n");
-        buffer = parts.pop() ?? "";
-
-        for (const part of parts) {
-            const lines = part.split("\n").map(l => l.trim()).filter(Boolean);
-            const dataLines = lines.filter(l => l.startsWith("data:")).map(l => l.slice(5).trim());
-            if (!dataLines.length) continue;
-
-            const joined = dataLines.join("");
-            if (joined === "[DONE]") { finalDone = true; continue; }
-
-            let payload;
-            try { payload = JSON.parse(joined); } catch { continue; }
-
-            let b64 =
-                payload?.data?.[0]?.b64_json ??
-                payload?.b64_json ??
-                payload?.image_base64 ?? null;
-
-            const isPartial =
-                (payload?.type && String(payload.type).includes("partial")) ||
-                lines.some(l => l.toLowerCase().includes("event:") && l.toLowerCase().includes("partial"));
-
-            const isFinal =
-                (payload?.type && (String(payload.type).includes("complete") || String(payload.type).includes("final"))) ||
-                (payload?.data && payload?.data?.[0] && !isPartial);
-
-            if (!b64) continue;
-
-            const blob = b64ToBlob(b64, "image/png");
-
-            if (isPartial) {
-                partialIndex++;
-                await saveAndSetActor(actor, blob, `p${partialIndex}`, saveDir, storageSrc);
-            } else if (isFinal) {
-                await saveAndSetActor(actor, blob, "final", saveDir, storageSrc);
-                finalDone = true;
-            }
-        }
+    } else if (url) {
+        const blob = await (await fetch(url)).blob();
+        await saveAndSetActor(actor, blob, "final", saveDir, storageSrc);
+    } else {
+        throw new Error("No image data returned from OpenAI");
     }
 }
 
-export async function saveAndSetActor(actor, blob, tag, saveDir, storageSrc) {
+export async function generateAndSetGeminiActorImage(actor, apiKey, { prompt, size, background, saveDir, storageSrc, abortSignal }) {
+    const GEMINI_MODEL = "imagen-3.0-generate-002";
+
+    // Size mapping for Imagen 3 (only supports specific aspect ratios)
+    let aspectRatio = "1:1";
+
+    const requestBody = {
+        instances: [
+            {
+                prompt: prompt
+            }
+        ],
+        parameters: {
+            sampleCount: 1,
+            aspectRatio: aspectRatio,
+            personGeneration: "ALLOW_ADULT"
+        }
+    };
+
+    const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:predict?key=${apiKey}`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify(requestBody),
+        signal: abortSignal
+    });
+
+    if (!resp.ok) {
+        const data = await resp.json().catch(() => ({}));
+        throw new Error(`Gemini error ${resp.status}: ${data?.error?.message || resp.statusText}`);
+    }
+
+    const data = await resp.json();
+    const b64 = data?.predictions?.[0]?.bytesBase64Encoded;
+
+    if (b64) {
+        // Gemini returns JPEG by default for base64 output
+        const blob = b64ToBlob(b64, "image/jpeg");
+        await saveAndSetActor(actor, blob, "final", saveDir, storageSrc, "image/jpeg");
+    } else {
+        throw new Error("No image data returned from Gemini");
+    }
+}
+
+export async function saveAndSetActor(actor, blob, tag, saveDir, storageSrc, mime = "image/png") {
     const filenameSlug = (s) => s?.toLowerCase?.().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "") || "token";
     const base = filenameSlug(actor.name);
-    const filename = `${base}-${Date.now()}-${tag}.png`;
+    const ext = mime === "image/jpeg" ? "jpg" : "png";
+    const filename = `${base}-${Date.now()}-${tag}.${ext}`;
 
-    const filePath = await uploadBlobToFoundry(blob, filename, saveDir, storageSrc, "image/png");
+    const filePath = await uploadBlobToFoundry(blob, filename, saveDir, storageSrc, mime);
 
     await actor.update({
         "img": filePath,

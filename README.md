@@ -35,7 +35,8 @@
 2.  Click the **"Vibe Actor"** button in the header.
 3.  Enter a prompt (e.g., "A grim dwarf warmaster with a grudge against elves").
 4.  Configure optional parameters (CR, Type, Size).
-5.  Click **Generate**.
+5.  Optionally, toggle **Generate portrait image after creation?** and specify image generation details (Subject, Style, Transparent Background).
+6.  Click **Generate**.
 
 ### Adjusting an Actor
 1.  Open an Actor Sheet.
@@ -43,11 +44,11 @@
 3.  Enter instructions for the adjustment.
 4.  Click **Apply**.
 
-### Generating an Image
+### Generating an Image (Independently)
 1.  Open an Actor Sheet.
 2.  Click the **"Vibe Image"** button.
-3.  Review the generated prompt (or edit it).
-4.  Click **Generate Image**.
+3.  Review the generated prompt (or edit it) and toggle transparency.
+4.  Click **Generate**.
 
 ---
 

@@ -1,17 +1,19 @@
 <form class="vibe-dialog-form vibe-actor-dialog">
-    <div class="form-group">
-        {{> "modules/vibe-common/templates/components/vibe-select.hbs" name="cr" options=crOptions labelText="Challenge
-        Rating (CR)"}}
+    <div class="vibe-grid-3">
+        <div class="form-group">
+            {{> "modules/vibe-common/templates/components/vibe-select.hbs" name="cr" options=crOptions labelText="CR"}}
+        </div>
+        <div class="form-group">
+            {{> "modules/vibe-common/templates/components/vibe-select.hbs" name="type" options=typeOptions
+            labelText="Type"}}
+        </div>
+        <div class="form-group">
+            {{> "modules/vibe-common/templates/components/vibe-select.hbs" name="size" options=sizeOptions
+            labelText="Size"}}
+        </div>
     </div>
-    <div class="form-group">
-        {{> "modules/vibe-common/templates/components/vibe-select.hbs" name="type" options=typeOptions
-        labelText="Type"}}
-    </div>
-    <div class="form-group">
-        {{> "modules/vibe-common/templates/components/vibe-select.hbs" name="size" options=sizeOptions
-        labelText="Size"}}
-    </div>
-    <div class="form-group">
+
+    <div class="form-group" style="margin-top: 4px;">
         <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 4px;">
             <label for="prompt" style="margin-bottom: 0;">Description / Prompt</label>
             <button type="button" class="vibe-btn vibe-btn-sm btn-generate-lore" title="Write Lore with AI"
@@ -22,8 +24,27 @@
         <textarea name="prompt" id="prompt" rows="4"
             placeholder="Describe the creature you want to generate...">Rowdy tavern brawler</textarea>
     </div>
-    <div class="generate-image-row" style="margin-top: 10px;">
+
+    <div class="generate-image-row" style="margin-top: 8px;">
         {{> "modules/vibe-common/templates/components/vibe-toggle.hbs" name="generateImage" checked=true
         labelText="Generate portrait image after creation?"}}
+    </div>
+
+    <!-- Hidden by default, toggled via JS when generateImage is true -->
+    <div id="image-gen-inputs" class="vibe-advanced-options" style="margin-top: 8px;">
+        <div class="form-group" style="margin-bottom: 8px;">
+            <label for="imageSubject" style="font-size: 12px;">Subject (short)</label>
+            <input name="imageSubject" type="text" placeholder="e.g., Elf ranger">
+        </div>
+        <div class="form-group" style="margin-bottom: 8px;">
+            <label for="imageDesc" style="font-size: 12px;">Image Style / Details</label>
+            <textarea name="imageDesc" rows="2" placeholder="Pose, gear, lighting, background, art style..."
+                style="min-height: 50px;"></textarea>
+        </div>
+        <div class="form-group checkbox-wrapper" style="height: auto; margin-top: 4px;">
+            <input type="checkbox" name="transparentBg" id="transparentBg" checked>
+            <label for="transparentBg" style="font-size: 12px; font-weight: normal; cursor: pointer;">Transparent
+                background</label>
+        </div>
     </div>
 </form>

@@ -4,22 +4,38 @@ import { VibeToast } from "../../../vibe-common/scripts/ui/toast-manager.js";
  * Handles generating images for actors using OpenAI's DALL-E 3
  */
 
-import { generateAndSetActorImage, ensureDirectoryExists } from "../services/image-generation-service.js";
+import { generateAndSetActorImage, generateAndSetGeminiActorImage, ensureDirectoryExists } from "../services/image-generation-service.js";
 import { ImageGenerationDialog } from "./dialogs/image-generation-dialog.js";
-import { getOpenAiApiKey } from "../../../vibe-common/scripts/settings.js";
+import { getOpenAiApiKey, getGeminiApiKey, getImageGenerationModel } from "../../../vibe-common/scripts/settings.js";
 
 export class ImageGenerator {
-  static async generateImage(actor) {
+  static async generateImage(actor, options = null) {
+    const model = getImageGenerationModel();
     let apiKey;
     try {
-      apiKey = getOpenAiApiKey();
+      if (model === "imagen-3") {
+        apiKey = getGeminiApiKey();
+      } else {
+        apiKey = getOpenAiApiKey();
+      }
     } catch (e) {
       return;
     }
 
     try {
-      const { prompt, background } = await ImageGenerationDialog.prompt(actor.name);
-      if (!prompt) return;
+      let prompt, background;
+
+      if (options && options.prompt) {
+        // Skip dialog if options were passed in direct from Vibe Actor Dialog
+        prompt = options.prompt;
+        background = options.background || "auto";
+      } else {
+        // Fallback to dialog if called from sheet directly
+        const result = await ImageGenerationDialog.prompt(actor.name);
+        if (!result.prompt) return;
+        prompt = result.prompt;
+        background = result.background;
+      }
 
       const controller = new AbortController();
       let isDone = false;
@@ -50,15 +66,20 @@ export class ImageGenerator {
       await ensureDirectoryExists(storageSrc, saveDir);
 
       // Stream from Images API
-      await generateAndSetActorImage(actor, apiKey, {
+      const genOptions = {
         prompt,
         size: "1024x1024",
         background,
-        partialImages: 3,
         saveDir,
         storageSrc,
         abortSignal: controller.signal
-      });
+      };
+
+      if (model === "imagen-3") {
+        await generateAndSetGeminiActorImage(actor, apiKey, genOptions);
+      } else {
+        await generateAndSetActorImage(actor, apiKey, genOptions);
+      }
 
       isDone = true;
       if (progressDialog.rendered) {
