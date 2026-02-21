@@ -7,12 +7,14 @@ import { getCrOptions, CREATURE_TYPES, SIZE_OPTIONS } from "../../constants.js";
 import { GeminiPipeline } from "../../services/gemini-pipeline.js";
 import { ensureItemHasId, ensureActivityIds } from "../../factories/actor-factory.js";
 import { ImageGenerator } from "../image-generator.js";
+import { getGeminiApiKey } from "../../../vibe-common/scripts/settings.js";
 
 export class VibeActorDialog {
   static async show() {
-    const apiKey = game.settings.get("vibe-actor", "geminiApiKey");
-    if (!apiKey || apiKey.trim() === "") {
-      ui.notifications.error("Please configure your Gemini API key in module settings first.");
+    let apiKey;
+    try {
+      apiKey = getGeminiApiKey();
+    } catch (e) {
       return;
     }
 
@@ -60,15 +62,37 @@ export class VibeActorDialog {
   }
 
   static async generateActor(cr, type, size, prompt, generateImage) {
-    const apiKey = game.settings.get("vibe-actor", "geminiApiKey");
-
-    if (!apiKey || apiKey.trim() === "") {
-      ui.notifications.error("Gemini API key is not configured.");
+    let apiKey;
+    try {
+      apiKey = getGeminiApiKey();
+    } catch (e) {
       return;
     }
 
-    // Show loading notification
-    const notification = ui.notifications.info("Generating actor with Gemini Pipeline...", { permanent: true });
+    const controller = new AbortController();
+    let isDone = false;
+
+    // Show progress dialog instead of notification
+    const progressDialog = new Dialog({
+      title: "Generating Actor...",
+      content: `<div style="padding: 10px; text-align: center;"><p id="vibe-actor-progress-msg" style="font-style: italic;">Initializing pipeline...</p></div>`,
+      buttons: {
+        cancel: {
+          icon: '<i class="fas fa-times"></i>',
+          label: "Cancel",
+          callback: () => {
+            controller.abort();
+          }
+        }
+      },
+      close: () => {
+        if (!isDone) {
+          controller.abort();
+        }
+      }
+    }, { width: 300 });
+
+    progressDialog.render(true);
 
     try {
       // Check permissions first
@@ -77,7 +101,17 @@ export class VibeActorDialog {
       }
 
       const pipeline = new GeminiPipeline(apiKey);
-      const actorData = await pipeline.generateActor({ cr, type, size, prompt });
+      const actorData = await pipeline.generateActor(
+        { cr, type, size, prompt },
+        {
+          abortSignal: controller.signal,
+          onProgress: (msg) => {
+            if (progressDialog.element) {
+              progressDialog.element.find("#vibe-actor-progress-msg").text(msg);
+            }
+          }
+        }
+      );
 
       // Ensure the actor has the correct structure for dnd5e
       if (!actorData.name) {
@@ -90,7 +124,6 @@ export class VibeActorDialog {
         throw new Error("Failed to create actor document.");
       }
 
-      notification.remove();
       ui.notifications.info(`Successfully created actor: ${actor.name}`);
 
       if (generateImage) {
@@ -98,9 +131,40 @@ export class VibeActorDialog {
       }
 
     } catch (error) {
-      notification.remove();
-      console.error("Error generating actor:", error);
-      ui.notifications.error(`Failed to generate actor: ${error.message}`);
+      if (error.name === "AbortError") {
+        ui.notifications.info("Actor generation cancelled.");
+      } else {
+        console.error("Vibe Actor | Error generating actor:", error);
+
+        // Show a retry dialog for JSON/generation errors
+        if (error.message.includes("Invalid JSON") || error.message.includes("Return unexpected") || error.message.includes("parse") || error.message.includes("Max retries") || error.message.includes("Gemini request failed")) {
+          new Dialog({
+            title: "Generation Error",
+            content: `<div style="padding: 10px; text-align: center;"><p>The AI returned unexpected data.</p><p style="color: grey; font-size: 0.9em;">${error.message}</p></div>`,
+            buttons: {
+              retry: {
+                icon: '<i class="fas fa-redo"></i>',
+                label: "Click to Retry",
+                callback: () => {
+                  this.generateActor(cr, type, size, prompt, generateImage);
+                }
+              },
+              cancel: {
+                icon: '<i class="fas fa-times"></i>',
+                label: "Cancel"
+              }
+            },
+            default: "retry"
+          }).render(true);
+        } else {
+          ui.notifications.error(`Failed to generate actor: ${error.message}`);
+        }
+      }
+    } finally {
+      isDone = true;
+      if (progressDialog.rendered) {
+        progressDialog.close();
+      }
     }
   }
 }

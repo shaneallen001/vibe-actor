@@ -19,17 +19,13 @@
 -   **Seamless Workflow**: Images are automatically saved and assigned to the actor's prototype token and sheet image.
 
 ## Installation
-1.  Ensure **`vibe-common`** is installed and enabled.
+1.  Ensure **`vibe-common`** is installed and enabled (vibe-actor will cleanly abort initialization and show an error notification if this dependency is missing).
 2.  Install **`vibe-actor`** into your `Data/modules/` directory.
 3.  Enable the module in your Foundry VTT world.
 
 ## Configuration
-Go to **Settings -> Configure Settings -> Vibe Actor** to set up your API keys:
-
--   **Gemini API Key**: Required for Actor Generation and Adjustment.
--   **OpenAI API Key**: Required for Image Generation.
-
-> **Note**: If you are migrating from `vibe-combat`, your settings will be automatically migrated upon first launch.
+- **API Keys**: Configure your Gemini and OpenAI API keys in the **Vibe Common** module settings.
+- **Vibe Actor Settings**: Go to **Settings -> Configure Settings -> Vibe Actor** to configure permissions for player actor generation.
 
 ## Usage
 
@@ -75,6 +71,7 @@ if (GeminiPipeline) {
 ### Module Entry Point & Hooks (`scripts/main.js`)
 
 ```
+Hooks.once("init")                    → Checks for `vibe-common` dependency; aborts and notifies if missing
 Hooks.once("ready")                   → Validates dnd5e system, calls registerActorModuleSettings()
 Hooks.on("renderSidebarTab")          → Injects "Vibe Actor" button when actors tab is active
 Hooks.on("renderActorDirectory")      → Also injects button (defensive, covers v13 tab switching)
@@ -113,12 +110,10 @@ scripts/
 │   ├── image-generation-service.js # Calls OpenAI DALL-E, saves image, updates actor
 │   └── spellcasting-builder.js     # Converts blueprint spellcasting into dnd5e spellcasting feat
 ├── ui/
-│   ├── actor-button-injector.js    # Injects "Vibe Actor" button into the Actor Directory header
 │   ├── image-generator.js          # Dialog wrapper for image generation (calls ImageGenerationService)
 │   └── dialogs/
-│       ├── vibe-actor-dialog.js    # Main actor generation dialog (form + progress)
-│       ├── vibe-adjustment-dialog.js# Adjustment dialog (shows current actor data + prompt field)
-│       └── ...
+│       ├── vibe-actor-dialog.js    # Main actor generation dialog (form + progress + retry on error)
+│       └── vibe-adjustment-dialog.js# Adjustment dialog (shows current actor data + prompt field)
 └── utils/
     ├── actor-helpers.js            # mapSkillsToKeys(), getActorCr(), getActorLevel(), etc.
     ├── item-utils.js               # sanitizeCustomItem(), validateAndRepairItemAutomation(), etc.

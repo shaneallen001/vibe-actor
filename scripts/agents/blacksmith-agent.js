@@ -2,12 +2,12 @@ import { GenerativeAgent } from "./generative-agent.js";
 import { GeminiItemListSchema } from "../schemas/foundry-item-schema.js";
 
 export class BlacksmithAgent extends GenerativeAgent {
-    constructor(apiKey) {
-        super(apiKey, GeminiItemListSchema);
-    }
+  constructor(apiKey) {
+    super(apiKey, GeminiItemListSchema);
+  }
 
-    get systemPrompt() {
-        return `You are the "Blacksmith".
+  get systemPrompt() {
+    return `You are the "Blacksmith".
     
     Task: Generate valid Foundry VTT Item Data for requested custom features.
     
@@ -58,23 +58,23 @@ export class BlacksmithAgent extends GenerativeAgent {
       - Create separate save rider activity with save object + linked poisoned effect (onSave false)
       - Keep rider uses/consumption consistent with feature intent; avoid double-consuming uses
     `;
-    }
+  }
 
-    async generate(context) {
-        const items = await super.generate(context);
+  async generate(context, options = {}) {
+    const items = await super.generate(context, options);
 
-        return items.map(item => {
-            item._id = foundry.utils.randomID(16);
+    return items.map(item => {
+      item._id = foundry.utils.randomID(16);
 
-            if (item.system?.activities && Array.isArray(item.system.activities)) {
-                const activityMap = {};
-                item.system.activities.forEach(activity => {
-                    activity._id = foundry.utils.randomID(16);
-                    activityMap[activity._id] = activity;
-                });
-                item.system.activities = activityMap;
-            }
-            return item;
+      if (item.system?.activities && Array.isArray(item.system.activities)) {
+        const activityMap = {};
+        item.system.activities.forEach(activity => {
+          activity._id = foundry.utils.randomID(16);
+          activityMap[activity._id] = activity;
         });
-    }
+        item.system.activities = activityMap;
+      }
+      return item;
+    });
+  }
 }

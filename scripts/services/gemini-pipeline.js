@@ -24,39 +24,51 @@ export class GeminiPipeline {
         this.apiKey = apiKey;
     }
 
-    async generateActor(request) {
+    async generateActor(request, options = {}) {
+        const onProgress = options.onProgress || (() => { });
         console.log("Vibe Actor | Starting Gemini Pipeline...");
 
-        const blueprint = await this.runArchitect(request);
+        onProgress("Architecting blueprint...", 10);
+        const blueprint = await this.runArchitect(request, options);
         console.log("Vibe Actor | Blueprint created:", blueprint);
 
-        const selection = await this.runQuartermaster(blueprint);
+        onProgress("Selecting equipment and features...", 30);
+        const selection = await this.runQuartermaster(blueprint, options);
         console.log("Vibe Actor | Components selected:", selection);
 
-        const customItems = await this.runBlacksmith(blueprint, selection.customRequests);
+        onProgress("Fabricating custom items...", 60);
+        const customItems = await this.runBlacksmith(blueprint, selection.customRequests, options);
         console.log("Vibe Actor | Custom items fabricated:", customItems);
 
+        onProgress("Assembling actor data...", 90);
         const actorData = await this.runBuilder(blueprint, selection.selectedUuids, customItems);
         console.log("Vibe Actor | Actor data assembled.");
 
+        onProgress("Complete!", 100);
         return actorData;
     }
 
-    async adjustActor(actor, prompt) {
+    async adjustActor(actor, prompt, options = {}) {
+        const onProgress = options.onProgress || (() => { });
         console.log("Vibe Actor | Starting Actor Adjustment...");
 
+        onProgress("Extracting current character blueprint...", 10);
         const currentBlueprint = await BlueprintFactory.createFromActor(actor);
         console.log("Vibe Actor | Current Blueprint extracted:", currentBlueprint);
 
-        const blueprint = await this.runAdjustment(currentBlueprint, prompt);
+        onProgress("Designing adjustments...", 20);
+        const blueprint = await this.runAdjustment(currentBlueprint, prompt, options);
         console.log("Vibe Actor | Adjusted Blueprint created:", blueprint);
 
-        const selection = await this.runQuartermaster(blueprint);
+        onProgress("Selecting updated equipment and features...", 40);
+        const selection = await this.runQuartermaster(blueprint, options);
         console.log("Vibe Actor | Components selected:", selection);
 
-        const customItems = await this.runBlacksmith(blueprint, selection.customRequests);
+        onProgress("Fabricating new custom items...", 60);
+        const customItems = await this.runBlacksmith(blueprint, selection.customRequests, options);
         console.log("Vibe Actor | Custom items fabricated:", customItems);
 
+        onProgress("Reassembling actor data...", 90);
         const actorData = await this.runBuilder(blueprint, selection.selectedUuids, customItems);
 
         console.log("Vibe Actor | Updating Actor document...");
@@ -74,25 +86,26 @@ export class GeminiPipeline {
 
         await actor.createEmbeddedDocuments("Item", actorData.items);
 
+        onProgress("Complete!", 100);
         console.log("Vibe Actor | Actor adjusted successfully.");
         return actor;
     }
 
-    async runArchitect(request) {
+    async runArchitect(request, options = {}) {
         const agent = new ArchitectAgent(this.apiKey);
-        return await agent.generate(request);
+        return await agent.generate(request, options);
     }
 
-    async runAdjustment(originalBlueprint, userPrompt) {
+    async runAdjustment(originalBlueprint, userPrompt, options = {}) {
         const agent = new AdjustmentAgent(this.apiKey);
         const context = {
             originalBlueprint,
             userPrompt
         };
-        return await agent.generate(context);
+        return await agent.generate(context, options);
     }
 
-    async runQuartermaster(blueprint) {
+    async runQuartermaster(blueprint, options = {}) {
         const itemsToReview = [...(blueprint.features || [])];
 
         if (blueprint.equipment) {
@@ -126,10 +139,10 @@ export class GeminiPipeline {
         };
 
         const agent = new QuartermasterAgent(this.apiKey);
-        return await agent.generate(context);
+        return await agent.generate(context, options);
     }
 
-    async runBlacksmith(blueprint, customRequests) {
+    async runBlacksmith(blueprint, customRequests, options = {}) {
         if (!customRequests || customRequests.length === 0) return [];
 
         const context = {
@@ -140,7 +153,7 @@ export class GeminiPipeline {
         };
 
         const agent = new BlacksmithAgent(this.apiKey);
-        return await agent.generate(context);
+        return await agent.generate(context, options);
     }
 
     async runBuilder(blueprint, selectedUuids, customItems) {

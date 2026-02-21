@@ -3,7 +3,7 @@
  * Handles generating images for actors using OpenAI's DALL-E 3 (or compatible API)
  */
 
-export async function generateAndSetActorImage(actor, apiKey, { prompt, size, background, partialImages, saveDir, storageSrc }) {
+export async function generateAndSetActorImage(actor, apiKey, { prompt, size, background, partialImages, saveDir, storageSrc, abortSignal }) {
     const OPENAI_MODEL = "gpt-image-1";
 
     const resp = await fetch("https://api.openai.com/v1/images/generations", {
@@ -21,7 +21,8 @@ export async function generateAndSetActorImage(actor, apiKey, { prompt, size, ba
             stream: true,
             partial_images: partialImages,
             n: 1
-        })
+        }),
+        signal: abortSignal
     });
 
     if (!resp.ok && resp.status !== 200) {

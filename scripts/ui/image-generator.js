@@ -5,12 +5,14 @@
 
 import { generateAndSetActorImage, ensureDirectoryExists } from "../services/image-generation-service.js";
 import { ImageGenerationDialog } from "./dialogs/image-generation-dialog.js";
+import { getOpenAiApiKey } from "../../vibe-common/scripts/settings.js";
 
 export class ImageGenerator {
   static async generateImage(actor) {
-    const apiKey = game.settings.get("vibe-actor", "openaiApiKey");
-    if (!apiKey) {
-      ui.notifications.error("Please set the OpenAI API Key in the Vibe Actor module settings.");
+    let apiKey;
+    try {
+      apiKey = getOpenAiApiKey();
+    } catch (e) {
       return;
     }
 
@@ -18,7 +20,27 @@ export class ImageGenerator {
       const { prompt, background } = await ImageGenerationDialog.prompt(actor.name);
       if (!prompt) return;
 
-      ui.notifications.info(`Generating image for ${actor.name} (streaming)...`);
+      const controller = new AbortController();
+      let isDone = false;
+
+      const progressDialog = new Dialog({
+        title: "Generating Image...",
+        content: `<div style="padding: 10px; text-align: center;"><p id="vibe-actor-img-msg" style="font-style: italic;">Requesting image for ${actor.name}...</p></div>`,
+        buttons: {
+          cancel: {
+            icon: '<i class="fas fa-times"></i>',
+            label: "Cancel",
+            callback: () => {
+              controller.abort();
+            }
+          }
+        },
+        close: () => {
+          if (!isDone) controller.abort();
+        }
+      }, { width: 300 });
+
+      progressDialog.render(true);
 
       const saveDir = `worlds/${game.world.id}/ai-images`;
       const storageSrc = "data";
@@ -33,16 +55,23 @@ export class ImageGenerator {
         background,
         partialImages: 3,
         saveDir,
-        storageSrc
+        storageSrc,
+        abortSignal: controller.signal
       });
 
+      isDone = true;
+      if (progressDialog.rendered) {
+        progressDialog.close();
+      }
       ui.notifications.info("Done! Actor image updated.");
     } catch (err) {
-      console.error(err);
-      const msg = (err?.name === "AbortError")
-        ? "Request timed out."
-        : (err?.message || String(err));
-      ui.notifications.error(`Image generation failed: ${msg}`);
+      if (err?.name === "AbortError") {
+        ui.notifications.info("Image generation cancelled.");
+      } else {
+        console.error(err);
+        const msg = err?.message || String(err);
+        ui.notifications.error(`Image generation failed: ${msg}`);
+      }
     }
   }
 }

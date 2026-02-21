@@ -15,7 +15,8 @@ Hooks.once("init", () => {
   const module = game.modules.get("vibe-actor");
   if (module) {
     module.api = {
-      GeminiPipeline
+      GeminiPipeline,
+      VibeActorDialog
     };
   }
 });
@@ -29,19 +30,7 @@ Hooks.once("ready", () => {
   registerActorModuleSettings();
 });
 
-Hooks.on("renderSidebarTab", (app, html) => {
-  if (app.tabName === "actors") {
-    requestAnimationFrame(() => {
-      addVibeActorButton(app, html, () => VibeActorDialog.show());
-    });
-  }
-});
-
-Hooks.on("renderActorDirectory", (app, html) => {
-  requestAnimationFrame(() => {
-    addVibeActorButton(app, html, () => VibeActorDialog.show());
-  });
-});
+// The original "Vibe Actor" sidebar button has been removed in favor of the unified Vibe Menu in vibe-common.
 
 Hooks.on("getHeaderControlsApplicationV2", (app, controls) => {
   if (!game.user.isGM) return;

@@ -12,7 +12,8 @@ export class GenerativeAgent {
         return "You are a helpful AI assistant.";
     }
 
-    async generate(input, retries = 3) {
+    async generate(input, options = {}) {
+        const retries = options.retries || 3;
         const jsonSchema = zodToJsonSchema(this.schema);
 
         let currentPrompt = `${this.systemPrompt}\n\nTask Context:\n${JSON.stringify(input, null, 2)}`;
@@ -26,7 +27,8 @@ export class GenerativeAgent {
                 const text = await callGemini({
                     apiKey: this.apiKey,
                     prompt: currentPrompt,
-                    responseSchema: jsonSchema
+                    responseSchema: jsonSchema,
+                    abortSignal: options.abortSignal
                 });
 
                 let json = extractJson(text);
