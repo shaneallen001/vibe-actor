@@ -7,7 +7,7 @@ import { getCrOptions, CREATURE_TYPES, SIZE_OPTIONS } from "../../constants.js";
 import { GeminiPipeline } from "../../services/gemini-pipeline.js";
 import { ensureItemHasId, ensureActivityIds } from "../../factories/actor-factory.js";
 import { ImageGenerator } from "../image-generator.js";
-import { getGeminiApiKey } from "../../../vibe-common/scripts/settings.js";
+import { getGeminiApiKey } from "../../../../vibe-common/scripts/settings.js";
 
 export class VibeActorDialog {
   static async show() {

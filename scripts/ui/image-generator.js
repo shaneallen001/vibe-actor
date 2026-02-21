@@ -5,7 +5,7 @@
 
 import { generateAndSetActorImage, ensureDirectoryExists } from "../services/image-generation-service.js";
 import { ImageGenerationDialog } from "./dialogs/image-generation-dialog.js";
-import { getOpenAiApiKey } from "../../vibe-common/scripts/settings.js";
+import { getOpenAiApiKey } from "../../../vibe-common/scripts/settings.js";
 
 export class ImageGenerator {
   static async generateImage(actor) {

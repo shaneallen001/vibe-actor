@@ -3,7 +3,7 @@
  * Dialog for adjusting an existing actor using AI
  */
 import { GeminiPipeline } from "../../services/gemini-pipeline.js";
-import { getGeminiApiKey } from "../../../vibe-common/scripts/settings.js";
+import { getGeminiApiKey } from "../../../../vibe-common/scripts/settings.js";
 
 export class VibeAdjustmentDialog extends Application {
     constructor(actor, options = {}) {
