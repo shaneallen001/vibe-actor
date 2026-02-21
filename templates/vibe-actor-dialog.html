@@ -1,39 +1,29 @@
 <form class="vibe-dialog-form vibe-actor-dialog">
     <div class="form-group">
-        <label for="cr">Challenge Rating (CR)</label>
-        <select name="cr" id="cr">
-            <option value="">Any</option>
-            {{#each crOptions}}
-            <option value="{{this}}" {{#if (eq this "1")}}selected{{/if}}>{{this}}</option>
-            {{/each}}
-        </select>
+        {{> "modules/vibe-common/templates/components/vibe-select.hbs" name="cr" options=crOptions labelText="Challenge
+        Rating (CR)"}}
     </div>
     <div class="form-group">
-        <label for="type">Type</label>
-        <select name="type" id="type">
-            <option value="">Any</option>
-            {{#each typeOptions}}
-            <option value="{{this}}" {{#if (eq this "Humanoid")}}selected{{/if}}>{{this}}</option>
-            {{/each}}
-        </select>
+        {{> "modules/vibe-common/templates/components/vibe-select.hbs" name="type" options=typeOptions
+        labelText="Type"}}
     </div>
     <div class="form-group">
-        <label for="size">Size</label>
-        <select name="size" id="size">
-            <option value="">Any</option>
-            {{#each sizeOptions}}
-            <option value="{{this}}" {{#if (eq this "Medium")}}selected{{/if}}>{{this}}</option>
-            {{/each}}
-        </select>
+        {{> "modules/vibe-common/templates/components/vibe-select.hbs" name="size" options=sizeOptions
+        labelText="Size"}}
     </div>
     <div class="form-group">
-        <label for="prompt">Description / Prompt</label>
-        <textarea name="prompt" id="prompt" rows="4" placeholder="Describe the creature you want to generate...">Rowdy tavern brawler</textarea>
+        <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 4px;">
+            <label for="prompt" style="margin-bottom: 0;">Description / Prompt</label>
+            <button type="button" class="vibe-btn vibe-btn-sm btn-generate-lore" title="Write Lore with AI"
+                style="width: auto; padding: 2px 8px; font-size: 11px;">
+                <i class="fas fa-magic"></i> Auto-writer
+            </button>
+        </div>
+        <textarea name="prompt" id="prompt" rows="4"
+            placeholder="Describe the creature you want to generate...">Rowdy tavern brawler</textarea>
     </div>
-    <div class="generate-image-row">
-        <label>
-            <input type="checkbox" name="generateImage" checked>
-            Generate portrait image after creation?
-        </label>
+    <div class="generate-image-row" style="margin-top: 10px;">
+        {{> "modules/vibe-common/templates/components/vibe-toggle.hbs" name="generateImage" checked=true
+        labelText="Generate portrait image after creation?"}}
     </div>
 </form>

@@ -1,3 +1,4 @@
+import { VibeToast } from "../../../vibe-common/scripts/ui/toast-manager.js";
 /**
  * OpenAI Image Generator
  * Handles generating images for actors using OpenAI's DALL-E 3
@@ -63,14 +64,14 @@ export class ImageGenerator {
       if (progressDialog.rendered) {
         progressDialog.close();
       }
-      ui.notifications.info("Done! Actor image updated.");
+      VibeToast.info("Done! Actor image updated.");
     } catch (err) {
       if (err?.name === "AbortError") {
-        ui.notifications.info("Image generation cancelled.");
+        VibeToast.info("Image generation cancelled.");
       } else {
         console.error(err);
         const msg = err?.message || String(err);
-        ui.notifications.error(`Image generation failed: ${msg}`);
+        VibeToast.error(`Image generation failed: ${msg}`);
       }
     }
   }

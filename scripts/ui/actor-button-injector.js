@@ -1,3 +1,4 @@
+import { VibeToast } from "../../../vibe-common/scripts/ui/toast-manager.js";
 /**
  * Add the Vibe Actor button to the Actor Directory.
  */
@@ -35,7 +36,7 @@ export function addVibeActorButton(app, html, showVibeActorDialogFn) {
   button.addEventListener("click", () => {
     const allowPlayers = game.settings.get("vibe-actor", "allowPlayerActorGeneration");
     if (!game.user.isGM && !allowPlayers) {
-      ui.notifications.warn("Only the GM can use Vibe Actor.");
+      VibeToast.warn("Only the GM can use Vibe Actor.");
       return;
     }
     showVibeActorDialogFn();

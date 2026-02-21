@@ -1,3 +1,4 @@
+import { VibeToast } from "../../../../vibe-common/scripts/ui/toast-manager.js";
 /**
  * Vibe Adjustment Dialog
  * Dialog for adjusting an existing actor using AI
@@ -62,7 +63,7 @@ export class VibeAdjustmentDialog extends Application {
         // Get prompt
         const prompt = this.element.find("textarea[name='prompt']").val();
         if (!prompt || !prompt.trim()) {
-            ui.notifications.warn("Please enter an adjustment request.");
+            VibeToast.warn("Please enter an adjustment request.");
             return;
         }
 
@@ -91,18 +92,18 @@ export class VibeAdjustmentDialog extends Application {
                 }
             });
 
-            ui.notifications.info(`Adjusted ${this.actor.name} successfully!`);
+            VibeToast.info(`Adjusted ${this.actor.name} successfully!`);
             this.close();
 
         } catch (error) {
             if (error.name === "AbortError") {
-                ui.notifications.info("Adjustment cancelled.");
+                VibeToast.info("Adjustment cancelled.");
             } else {
                 console.error("Vibe Actor | Adjustment Error:", error);
                 if (error.message.includes("Invalid JSON") || error.message.includes("Return unexpected") || error.message.includes("parse") || error.message.includes("Max retries") || error.message.includes("Gemini request failed")) {
-                    ui.notifications.error(`The AI returned unexpected data. Click 'Adjust' to retry. (${error.message})`);
+                    VibeToast.error(`The AI returned unexpected data. Click 'Adjust' to retry. (${error.message})`);
                 } else {
-                    ui.notifications.error(`Adjustment failed: ${error.message}`);
+                    VibeToast.error(`Adjustment failed: ${error.message}`);
                 }
             }
         } finally {

@@ -1,3 +1,4 @@
+import { VibeToast } from "../../../../vibe-common/scripts/ui/toast-manager.js";
 /**
  * Vibe Actor Dialog
  * Dialog and Gemini API integration for generating actors
@@ -20,9 +21,18 @@ export class VibeActorDialog {
 
     // Generate context for template
     const context = {
-      crOptions: getCrOptions(),
-      typeOptions: CREATURE_TYPES,
-      sizeOptions: SIZE_OPTIONS
+      crOptions: [
+        { value: "", label: "Any" },
+        ...getCrOptions().map(cr => ({ value: cr, label: cr, selected: cr === "1" }))
+      ],
+      typeOptions: [
+        { value: "", label: "Any" },
+        ...CREATURE_TYPES.map(t => ({ value: t, label: t, selected: t === "Humanoid" }))
+      ],
+      sizeOptions: [
+        { value: "", label: "Any" },
+        ...SIZE_OPTIONS.map(s => ({ value: s, label: s, selected: s === "Medium" }))
+      ]
     };
 
     const content = await renderTemplate("modules/vibe-actor/templates/vibe-actor-dialog.html", context);
@@ -43,7 +53,7 @@ export class VibeActorDialog {
             const generateImage = html.find('[name="generateImage"]').is(":checked");
 
             if (!prompt || prompt.trim() === "") {
-              ui.notifications.warn("Please provide a description/prompt for the creature.");
+              VibeToast.warn("Please provide a description/prompt for the creature.");
               return;
             }
 
@@ -57,7 +67,48 @@ export class VibeActorDialog {
           label: "Cancel"
         }
       },
-      default: "generate"
+      default: "generate",
+      render: (html) => {
+        html.find('.btn-generate-lore').click(async (ev) => {
+          ev.preventDefault();
+          const btn = $(ev.currentTarget);
+          const icon = btn.find('i');
+          const textarea = html.find('#prompt');
+          const currentPrompt = textarea.val().trim();
+
+          if (!currentPrompt) {
+            ui.notifications?.warn("Please enter a basic concept first.");
+            return;
+          }
+
+          btn.prop('disabled', true);
+          icon.removeClass('fa-magic').addClass('fa-spinner fa-spin');
+          textarea.val('');
+
+          try {
+            const { callGeminiStream } = await import('../../../../vibe-common/scripts/services/gemini-service.js');
+            const apiKey = game.settings.get("vibe-common", "geminiApiKey");
+            if (!apiKey) throw new Error("API Key missing.");
+
+            const prompt = `Flesh out this basic character concept into a detailed, evocative 1-paragraph fantasy lore description suitable for a tabletop RPG monster or NPC. Keep it strictly to the lore. Do not output stats or markdown formatting.\nConcept: ${currentPrompt}`;
+
+            await callGeminiStream({
+              apiKey,
+              prompt,
+              onChunk: (chunk, fullText) => {
+                textarea.val(fullText.trimStart());
+              }
+            });
+          } catch (e) {
+            console.error(e);
+            if (ui.notifications) ui.notifications.error("Lore generation failed.");
+            textarea.val(currentPrompt);
+          } finally {
+            btn.prop('disabled', false);
+            icon.removeClass('fa-spinner fa-spin').addClass('fa-magic');
+          }
+        });
+      }
     }).render(true);
   }
 
@@ -124,7 +175,7 @@ export class VibeActorDialog {
         throw new Error("Failed to create actor document.");
       }
 
-      ui.notifications.info(`Successfully created actor: ${actor.name}`);
+      VibeToast.info(`Successfully created actor: ${actor.name}`);
 
       if (generateImage) {
         await ImageGenerator.generateImage(actor);
@@ -132,7 +183,7 @@ export class VibeActorDialog {
 
     } catch (error) {
       if (error.name === "AbortError") {
-        ui.notifications.info("Actor generation cancelled.");
+        VibeToast.info("Actor generation cancelled.");
       } else {
         console.error("Vibe Actor | Error generating actor:", error);
 
@@ -157,7 +208,7 @@ export class VibeActorDialog {
             default: "retry"
           }).render(true);
         } else {
-          ui.notifications.error(`Failed to generate actor: ${error.message}`);
+          VibeToast.error(`Failed to generate actor: ${error.message}`);
         }
       }
     } finally {
