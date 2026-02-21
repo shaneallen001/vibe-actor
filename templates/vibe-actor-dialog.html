@@ -47,4 +47,27 @@
                 background</label>
         </div>
     </div>
+
+    <div class="generate-item-image-row" style="margin-top: 8px; border-top: 1px solid rgba(255, 255, 255, 0.1); padding-top: 8px;">
+        {{> "modules/vibe-common/templates/components/vibe-toggle.hbs" name="generateItemImages" checked=false
+        labelText="Generate icons for unique equipment/features? (Slower)"}}
+    </div>
+
+    <!-- Hidden by default, toggled via JS when generateImage is true -->
+    <div id="image-gen-inputs" class="vibe-advanced-options" style="margin-top: 8px;">
+        <div class="form-group" style="margin-bottom: 8px;">
+            <label for="imageSubject" style="font-size: 12px;">Subject (short)</label>
+            <input name="imageSubject" type="text" placeholder="e.g., Elf ranger">
+        </div>
+        <div class="form-group" style="margin-bottom: 8px;">
+            <label for="imageDesc" style="font-size: 12px;">Image Style / Details</label>
+            <textarea name="imageDesc" rows="2" placeholder="Pose, gear, lighting, background, art style..."
+                style="min-height: 50px;"></textarea>
+        </div>
+        <div class="form-group checkbox-wrapper" style="height: auto; margin-top: 4px;">
+            <input type="checkbox" name="transparentBg" id="transparentBg" checked>
+            <label for="transparentBg" style="font-size: 12px; font-weight: normal; cursor: pointer;">Transparent
+                background</label>
+        </div>
+    </div>
 </form>

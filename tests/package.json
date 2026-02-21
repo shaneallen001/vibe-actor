@@ -1,0 +1,9 @@
+{
+    "name": "vibe-tester",
+    "version": "1.0.0",
+    "type": "module",
+    "scripts": {
+        "test:artificer": "node test-artificer.js",
+        "test:blacksmith": "node test-blacksmith.js"
+    }
+}

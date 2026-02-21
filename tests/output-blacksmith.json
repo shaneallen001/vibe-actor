@@ -1,0 +1,106 @@
+[
+  {
+    "name": "Breath of the Ancient Dragon",
+    "type": "feat",
+    "_id": "HtfQRDHaOOY7By2R",
+    "img": "icons/magic/fire/projectile-cone-yellow-red.webp",
+    "system": {
+      "description": {
+        "value": "A devastating 60ft cone of fire that deals 8d6 damage. Targets must succeed on a DC 15 Dexterity saving throw or take full damage, half on success."
+      },
+      "activities": {
+        "jh0XKIQ8NAY3RZM0": {
+          "_id": "jh0XKIQ8NAY3RZM0",
+          "type": "save",
+          "activation": {
+            "type": "action",
+            "value": 1
+          },
+          "save": {
+            "ability": [
+              "dex"
+            ],
+            "dc": {
+              "calculation": "flat",
+              "formula": "15"
+            }
+          },
+          "target": {
+            "template": {
+              "contiguous": true,
+              "type": "cone",
+              "size": "60",
+              "units": "ft"
+            }
+          },
+          "effects": [],
+          "uses": {
+            "spent": 0,
+            "max": "",
+            "recovery": []
+          },
+          "description": {
+            "chat": "Breathes a devastating cone of fire!"
+          }
+        },
+        "RfgT2X8LH4Gc6Xxp": {
+          "_id": "RfgT2X8LH4Gc6Xxp",
+          "type": "damage",
+          "activation": {
+            "type": "action",
+            "value": 1
+          },
+          "damage": {
+            "parts": [
+              {
+                "number": 8,
+                "denomination": 6,
+                "types": [
+                  "fire"
+                ]
+              }
+            ],
+            "onSave": "half"
+          },
+          "effects": []
+        }
+      },
+      "quantity": 1,
+      "weight": 0,
+      "rarity": "",
+      "identified": true
+    },
+    "effects": []
+  },
+  {
+    "name": "Uncanny Dodge",
+    "type": "feat",
+    "_id": "j5WhU5zeNU4sQ112",
+    "img": "icons/skills/movement/dodge-agile-glowing-yellow.webp",
+    "system": {
+      "description": {
+        "value": "When an attacker that you can see hits you with an attack, you can use your reaction to halve the attack's damage against you."
+      },
+      "activities": {
+        "UwAMNJcXGkCVrqSd": {
+          "_id": "UwAMNJcXGkCVrqSd",
+          "type": "utility",
+          "activation": {
+            "type": "reaction",
+            "value": 1,
+            "condition": "When an attacker that you can see hits you with an attack"
+          },
+          "effects": [],
+          "description": {
+            "chat": "Uses Uncanny Dodge to halve the incoming damage!"
+          }
+        }
+      },
+      "quantity": 1,
+      "weight": 0,
+      "rarity": "",
+      "identified": true
+    },
+    "effects": []
+  }
+]

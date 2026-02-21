@@ -45,6 +45,8 @@ const ActivityEffectReferenceSchema = z.object({
 const ItemActiveEffectSchema = z.object({
     _id: z.string().min(1).default(""),
     name: z.string().default(""),
+    type: z.string().default("base"),
+    description: z.string().default(""),
     transfer: z.boolean().default(false),
     statuses: z.array(z.string()).default([]),
     duration: z.object({
@@ -175,10 +177,35 @@ export const FoundryItemSchema = z.object({
         weight: z.number().default(0),
         price: z.object({ value: z.number().default(0), denomination: z.string().default("gp") }).optional(),
         rarity: z.string().default("common"),
+        attunement: z.string().optional(),
+        equipped: z.boolean().optional(),
+        properties: z.array(z.string()).optional(),
+        armor: z.object({
+            value: z.number().nullable().optional(),
+            dex: z.number().nullable().optional(),
+            magicalBonus: z.number().nullable().optional(),
+        }).optional(),
+        type: z.object({
+            value: z.string().optional(),
+            baseItem: z.string().optional(),
+        }).optional(),
+        damage: z.object({
+            parts: z.array(DamagePartSchema).optional(),
+            versatile: z.string().optional(),
+        }).optional(),
+        range: z.object({
+            value: z.number().nullable().optional(),
+            long: z.number().nullable().optional(),
+            units: z.string().optional()
+        }).optional(),
         uses: z.object({
             spent: z.number().default(0),
             max: z.string().default(""),
             recovery: z.array(z.object({ period: z.string(), type: z.string(), formula: z.string().optional() })).default([])
+        }).optional(),
+        identified: z.boolean().default(true),
+        unidentified: z.object({
+            description: z.string().default("")
         }).optional()
     }),
     effects: z.array(ItemActiveEffectSchema).default([]),

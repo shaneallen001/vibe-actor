@@ -2,12 +2,12 @@ import { GenerativeAgent } from "./generative-agent.js";
 import { BlueprintSchema } from "../schemas/blueprint-schema.js";
 
 export class ArchitectAgent extends GenerativeAgent {
-    constructor(apiKey) {
-        super(apiKey, BlueprintSchema);
-    }
+  constructor(apiKey) {
+    super(apiKey, BlueprintSchema);
+  }
 
-    get systemPrompt() {
-        return `You are the "Architect", an expert D&D 5e monster designer.
+  get systemPrompt() {
+    return `You are the "Architect", an expert D&D 5e monster designer.
     
     Task: Design a unique concept for a D&D 5e NPC based on the user's request.
     
@@ -20,7 +20,8 @@ export class ArchitectAgent extends GenerativeAgent {
     - Ensure HP and AC match the CR.
     - Provide rich, evocative descriptions.
     - Include appropriate equipment (weapons, armor, shields, gear) for the creature.
-    - Use common D&D 5e item names (e.g., "Longsword", "Chain Mail", "Light Crossbow").
+    - For low-level or standard creatures, use common D&D 5e item names (e.g., "Longsword", "Chain Mail").
+    - For powerful, high CR, or mythic creatures, invent unique, named magical equipment or wondrous items (e.g., "Blade of the Ashen King", "Mantle of the Void").
     - For each feature, include "automation" hints whenever mechanics are explicit in prose.
       - If text implies a saving throw, include save ability/DC style and expected on-save behavior.
       - If text implies a condition, include condition statuses and expected duration.
@@ -50,5 +51,5 @@ export class ArchitectAgent extends GenerativeAgent {
       - Lower-level spells (1st-3rd level): typically 2-3/day or at-will
     - Match the spell selection to the creature's theme and CR.
     `;
-    }
+  }
 }

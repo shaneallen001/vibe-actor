@@ -51,6 +51,7 @@ export class VibeActorDialog {
             const prompt = html.find('[name="prompt"]').val();
 
             const generateImage = html.find('[name="generateImage"]').is(":checked");
+            const generateItemImages = html.find('[name="generateItemImages"]').is(":checked");
 
             let imageOptions = null;
             if (generateImage) {
@@ -72,7 +73,7 @@ export class VibeActorDialog {
 
             // Note: generateActor is static, so we call VibeActorDialog.generateActor
             // (or this.generateActor if 'this' is bound to the class, which it is in a static method)
-            await this.generateActor(cr, type, size, prompt, generateImage, imageOptions);
+            await this.generateActor(cr, type, size, prompt, generateImage, imageOptions, generateItemImages);
           }
         },
         cancel: {
@@ -143,7 +144,7 @@ export class VibeActorDialog {
     }).render(true);
   }
 
-  static async generateActor(cr, type, size, prompt, generateImage, imageOptions) {
+  static async generateActor(cr, type, size, prompt, generateImage, imageOptions, generateItemImages = false) {
     let apiKey;
     try {
       apiKey = getGeminiApiKey();
@@ -199,6 +200,7 @@ export class VibeActorDialog {
           { cr, type, size, prompt },
           {
             abortSignal: controller.signal,
+            generateItemImages: generateItemImages,
             onProgress: (msg) => {
               if (progressDialog.element) {
                 progressDialog.element.find("#vibe-actor-progress-msg").text(msg);
@@ -302,7 +304,7 @@ export class VibeActorDialog {
                 icon: '<i class="fas fa-redo"></i>',
                 label: "Click to Retry",
                 callback: () => {
-                  this.generateActor(cr, type, size, prompt, generateImage, imageOptions);
+                  this.generateActor(cr, type, size, prompt, generateImage, imageOptions, generateItemImages);
                 }
               },
               cancel: {

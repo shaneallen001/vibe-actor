@@ -1,0 +1,214 @@
+[
+  {
+    "name": "Sword of the Eternal Flame",
+    "type": "weapon",
+    "_id": "xjvLtrZIo0CzBMwF",
+    "img": "icons/weapons/swords/sword-flamed-red.webp",
+    "system": {
+      "description": {
+        "value": "A legendary longsword that burns with a fire that can never be extinguished. It deals extra fire damage on a hit, and you can use an action to cast the Fireball spell from it once per dawn. While attuned, you have resistance to fire damage."
+      },
+      "activities": {
+        "vKsrLL3dnkSAEc7k": {
+          "_id": "vKsrLL3dnkSAEc7k",
+          "type": "save",
+          "activation": {
+            "type": "action",
+            "value": 1
+          },
+          "damage": {
+            "parts": [
+              {
+                "number": 8,
+                "denomination": 6,
+                "types": [
+                  "fire"
+                ]
+              }
+            ],
+            "onSave": "half"
+          },
+          "save": {
+            "ability": [
+              "dex"
+            ],
+            "dc": {
+              "calculation": "spellcasting"
+            }
+          },
+          "range": {
+            "value": "150",
+            "units": "ft"
+          },
+          "target": {
+            "template": {
+              "contiguous": true,
+              "type": "sphere",
+              "size": "20",
+              "units": "ft"
+            }
+          },
+          "effects": [],
+          "consumption": {
+            "targets": [
+              {
+                "type": "itemUses",
+                "value": "1"
+              }
+            ]
+          },
+          "description": {
+            "chat": "The blade flares brilliantly as a bead of fire shoots forth, erupting into a massive explosion of flame!"
+          }
+        }
+      },
+      "quantity": 1,
+      "weight": 3,
+      "price": {
+        "value": 15000,
+        "denomination": "gp"
+      },
+      "rarity": "legendary",
+      "attunement": "required",
+      "equipped": false,
+      "properties": [
+        "mgc",
+        "ver"
+      ],
+      "type": {
+        "value": "martialM",
+        "baseItem": "longsword"
+      },
+      "damage": {
+        "parts": [
+          {
+            "number": 1,
+            "denomination": 8,
+            "types": [
+              "slashing"
+            ]
+          },
+          {
+            "number": 1,
+            "denomination": 6,
+            "types": [
+              "fire"
+            ]
+          }
+        ],
+        "versatile": "1d10"
+      },
+      "uses": {
+        "spent": 0,
+        "max": "1",
+        "recovery": [
+          {
+            "period": "dawn",
+            "type": "recoverAll"
+          }
+        ]
+      },
+      "identified": true,
+      "unidentified": {
+        "description": "A finely crafted sword whose blade feels uncomfortably warm to the touch, even through its scabbard."
+      }
+    },
+    "effects": [
+      {
+        "_id": "EffEternlFlm0001",
+        "name": "Fire Resistance",
+        "type": "base",
+        "description": "Grants resistance to fire damage.",
+        "transfer": true,
+        "statuses": [],
+        "changes": [
+          {
+            "key": "system.traits.dr.value",
+            "mode": 2,
+            "value": "fire"
+          }
+        ]
+      }
+    ],
+    "flags": {}
+  },
+  {
+    "name": "Potion of Instant Recovery",
+    "type": "consumable",
+    "_id": "RpOYmBLQmjHz59k0",
+    "img": "icons/consumables/potions/potion-tube-corked-red.webp",
+    "system": {
+      "description": {
+        "value": "A very rare potion that restores 4d4+4 health and removes one level of exhaustion when consumed."
+      },
+      "activities": {
+        "sG1Q8lyhRrBmCxMy": {
+          "_id": "sG1Q8lyhRrBmCxMy",
+          "type": "heal",
+          "activation": {
+            "type": "action",
+            "value": 1
+          },
+          "damage": {
+            "parts": [
+              {
+                "number": 4,
+                "denomination": 4,
+                "types": [
+                  "healing"
+                ],
+                "bonus": "4"
+              }
+            ]
+          },
+          "range": {
+            "units": "touch"
+          },
+          "target": {
+            "affects": {
+              "type": "creature"
+            }
+          },
+          "effects": [],
+          "consumption": {
+            "targets": [
+              {
+                "type": "itemQuantity",
+                "value": "1"
+              }
+            ]
+          },
+          "description": {
+            "chat": "You quaff the fizzing red liquid, feeling a sudden surge of vitality and energy knit your wounds and clear your exhaustion."
+          }
+        }
+      },
+      "quantity": 1,
+      "weight": 0.5,
+      "price": {
+        "value": 5000,
+        "denomination": "gp"
+      },
+      "rarity": "veryRare",
+      "type": {
+        "value": "potion"
+      },
+      "uses": {
+        "spent": 0,
+        "max": "1",
+        "recovery": [
+          {
+            "period": "never",
+            "type": "recoverAll"
+          }
+        ]
+      },
+      "identified": true,
+      "unidentified": {
+        "description": "A swirling red liquid that fizzes constantly, occasionally popping the cork slightly."
+      }
+    },
+    "effects": [],
+    "flags": {}
+  }
+]

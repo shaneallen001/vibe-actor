@@ -54,4 +54,33 @@
 
 ## Developer Guide
 
-For information on module extenisbility, APIs, the AI generation pipeline, and component structure, please see [ARCHITECTURE.md](./ARCHITECTURE.md).
+### Standalone Generation APIs
+Vibe Actor exposes its core generative capabilities so other modules (or macros) can independently generate magical equipment and features.
+
+The `GeminiPipeline` class is exposed on the `vibe-actor` module API (`game.modules.get("vibe-actor").api.GeminiPipeline`).
+
+**Methods:**
+- `generateCustomFeatures(requests, context, options)`
+- `generateCustomEquipment(requests, context, options)`
+
+**Options:**
+- `createItem: true`: Creates a Foundry `Item` document in the directory instead of returning raw JSON.
+- `generateImage: true`: Leverages DALL-E or Imagen 3 to automatically generate an icon for the item.
+
+### Local Testing Loop
+We have included a standalone Node.js testing loop inside the [`tests/`](./tests/) directory that bypasses the Foundry UI. This allows rapid iteration and evaluation of the generative AI outputs. 
+
+To use it:
+1. Navigate to `vibe-actor/tests/`
+2. Set your API key in your terminal context: `$env:GEMINI_API_KEY="your-api-key"`
+3. Run `npm run test:artificer` or `npm run test:blacksmith`
+4. The generated output will be saved as a JSON file in the tests directory.
+
+Review the `tests/README.md` for more complete instructions on testing features programmatically.
+
+For more information on module extensibility, APIs, the AI generation pipeline, and component structure, please see [ARCHITECTURE.md](./ARCHITECTURE.md).
+
+## Recent Changes
+- Added UI notifications during the item and feature generation loops in the Gemini pipeline to provide better user feedback.
+- Refined the Item generation Zod schemas and AI agent prompts (Artificer and Blacksmith) to properly structure and output `ActiveEffects` (e.g., condition applications, passive resistance bonuses) with the correct effect `type: "base"`.
+- Improved Blacksmith agent instructions to prevent splitting damage mechanics out of save-based feature activities into isolated damage activities.

@@ -3,7 +3,7 @@
  * Handles generating images for actors using OpenAI's DALL-E 3 (or compatible API)
  */
 
-export async function generateAndSetActorImage(actor, apiKey, { prompt, size, background, partialImages, saveDir, storageSrc, abortSignal }) {
+export async function generateImageOpenAI(apiKey, { prompt, size, abortSignal }) {
     const OPENAI_MODEL = "dall-e-3";
 
     const resp = await fetch("https://api.openai.com/v1/images/generations", {
@@ -34,17 +34,16 @@ export async function generateAndSetActorImage(actor, apiKey, { prompt, size, ba
     const url = item?.url;
 
     if (b64) {
-        const blob = b64ToBlob(b64, "image/png");
-        await saveAndSetActor(actor, blob, "final", saveDir, storageSrc);
+        return { blob: b64ToBlob(b64, "image/png"), mime: "image/png" };
     } else if (url) {
         const blob = await (await fetch(url)).blob();
-        await saveAndSetActor(actor, blob, "final", saveDir, storageSrc);
+        return { blob, mime: "image/png" };
     } else {
         throw new Error("No image data returned from OpenAI");
     }
 }
 
-export async function generateAndSetGeminiActorImage(actor, apiKey, { prompt, size, background, saveDir, storageSrc, abortSignal }) {
+export async function generateImageGemini(apiKey, { prompt, size, abortSignal }) {
     const GEMINI_MODEL = "imagen-3.0-generate-002";
 
     // Size mapping for Imagen 3 (only supports specific aspect ratios)
@@ -82,11 +81,36 @@ export async function generateAndSetGeminiActorImage(actor, apiKey, { prompt, si
 
     if (b64) {
         // Gemini returns JPEG by default for base64 output
-        const blob = b64ToBlob(b64, "image/jpeg");
-        await saveAndSetActor(actor, blob, "final", saveDir, storageSrc, "image/jpeg");
+        return { blob: b64ToBlob(b64, "image/jpeg"), mime: "image/jpeg" };
     } else {
         throw new Error("No image data returned from Gemini");
     }
+}
+
+export async function generateAndSetActorImage(actor, apiKey, options) {
+    const { blob, mime } = await generateImageOpenAI(apiKey, options);
+    await saveAndSetActor(actor, blob, "final", options.saveDir, options.storageSrc, mime);
+}
+
+export async function generateAndSetGeminiActorImage(actor, apiKey, options) {
+    const { blob, mime } = await generateImageGemini(apiKey, options);
+    await saveAndSetActor(actor, blob, "final", options.saveDir, options.storageSrc, mime);
+}
+
+export async function generateAndSaveItemImage(itemName, apiKey, model, options) {
+    let result;
+    if (model === "imagen-3") {
+        result = await generateImageGemini(apiKey, options);
+    } else {
+        result = await generateImageOpenAI(apiKey, options);
+    }
+
+    const filenameSlug = (s) => s?.toLowerCase?.().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "") || "item";
+    const base = filenameSlug(itemName);
+    const ext = result.mime === "image/jpeg" ? "jpg" : "png";
+    const filename = `${base}-${Date.now()}-icon.${ext}`;
+
+    return await uploadBlobToFoundry(result.blob, filename, options.saveDir, options.storageSrc, result.mime);
 }
 
 export async function saveAndSetActor(actor, blob, tag, saveDir, storageSrc, mime = "image/png") {
