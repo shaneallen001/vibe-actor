@@ -56,6 +56,22 @@ Go to **Settings -> Configure Settings -> Vibe Actor** to set up your API keys:
 
 ## Developer Guide
 
+### Module API & Extensibility
+Vibe Actor exposes its core pipeline as a public API during the `init` hook, allowing other modules (like `vibe-combat`) to programmatically generate and adjust actors without duplicating code.
+
+```javascript
+// Access the pipeline
+const GeminiPipeline = game.modules.get("vibe-actor")?.api?.GeminiPipeline;
+
+if (GeminiPipeline) {
+    const pipeline = new GeminiPipeline(geminiApiKey);
+    const actorData = await pipeline.generateActor({ 
+        prompt: "A fiery goblin boss",
+        cr: 2
+    });
+}
+```
+
 ### Module Entry Point & Hooks (`scripts/main.js`)
 
 ```

@@ -8,6 +8,17 @@ import { addVibeActorButton } from "./ui/actor-button-injector.js";
 import { VibeActorDialog } from "./ui/dialogs/vibe-actor-dialog.js";
 import { ImageGenerator } from "./ui/image-generator.js";
 import { VibeAdjustmentDialog } from "./ui/dialogs/vibe-adjustment-dialog.js";
+import { GeminiPipeline } from "./services/gemini-pipeline.js";
+
+Hooks.once("init", () => {
+  // Expose the API immediately during init so other modules can safely check for it during ready
+  const module = game.modules.get("vibe-actor");
+  if (module) {
+    module.api = {
+      GeminiPipeline
+    };
+  }
+});
 
 Hooks.once("ready", () => {
   if (game.system.id !== "dnd5e") {
