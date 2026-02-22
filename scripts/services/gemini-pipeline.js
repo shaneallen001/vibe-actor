@@ -248,7 +248,7 @@ export class GeminiPipeline {
                 const model = getImageGenerationModel();
                 let imageApiKey;
                 try {
-                    imageApiKey = model === "imagen-3" ? getGeminiApiKey() : getOpenAiApiKey();
+                    imageApiKey = model.includes("imagen") ? getGeminiApiKey() : getOpenAiApiKey();
                 } catch (e) {
                     console.warn("Vibe Actor | Could not get image generation API key");
                 }

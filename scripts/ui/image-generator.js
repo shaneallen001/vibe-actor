@@ -13,7 +13,7 @@ export class ImageGenerator {
     const model = getImageGenerationModel();
     let apiKey;
     try {
-      if (model === "imagen-3") {
+      if (model.includes("imagen")) {
         apiKey = getGeminiApiKey();
       } else {
         apiKey = getOpenAiApiKey();
@@ -75,8 +75,8 @@ export class ImageGenerator {
         abortSignal: controller.signal
       };
 
-      if (model === "imagen-3") {
-        await generateAndSetGeminiActorImage(actor, apiKey, genOptions);
+      if (model.includes("imagen")) {
+        await generateAndSetGeminiActorImage(actor, apiKey, model, genOptions);
       } else {
         await generateAndSetActorImage(actor, apiKey, genOptions);
       }

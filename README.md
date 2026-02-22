@@ -84,3 +84,8 @@ For more information on module extensibility, APIs, the AI generation pipeline, 
 - Added UI notifications during the item and feature generation loops in the Gemini pipeline to provide better user feedback.
 - Refined the Item generation Zod schemas and AI agent prompts (Artificer and Blacksmith) to properly structure and output `ActiveEffects` (e.g., condition applications, passive resistance bonuses) with the correct effect `type: "base"`.
 - Improved Blacksmith agent instructions to prevent splitting damage mechanics out of save-based feature activities into isolated damage activities.
+- Fixed a UI bug in the Vibe Actor generation dialog where image generation prompt inputs were confusingly duplicated beneath the item generation toggle.
+- Fixed a critical bug in `vibe-actor-dialog.js` where generating an actor with an image would fail due to an incorrect relative import path for the `image-generation-service.js`.
+- Fixed a deprecation warning related to the global `FilePicker` variable in `image-generation-service.js` which is being removed in Foundry V15.
+- Fixed a 404 error during image generation by correctly mapping the 'imagen-3' and 'imagen-4' setting selection to the full API model names ('imagen-3.0-generate-001' and 'imagen-4.0-generate-001').
+- Added `Gemini Imagen 4.0` as an option in the **Image Generation Model** module setting in `vibe-common`. Updated `vibe-actor` image generation logic to dynamically respect this selection and map it to the correct API endpoint.

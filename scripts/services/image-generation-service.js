@@ -43,11 +43,16 @@ export async function generateImageOpenAI(apiKey, { prompt, size, abortSignal })
     }
 }
 
-export async function generateImageGemini(apiKey, { prompt, size, abortSignal }) {
-    const GEMINI_MODEL = "imagen-3.0-generate-002";
-
-    // Size mapping for Imagen 3 (only supports specific aspect ratios)
+export async function generateImageGemini(apiKey, model, { prompt, size, abortSignal }) {
+    // Size mapping for Imagen 4
     let aspectRatio = "1:1";
+
+    let apiModelName = model;
+    if (model === "imagen-4") {
+        apiModelName = "imagen-4.0-generate-001";
+    } else if (model === "imagen-3") {
+        apiModelName = "imagen-3.0-generate-001";
+    }
 
     const requestBody = {
         instances: [
@@ -62,7 +67,7 @@ export async function generateImageGemini(apiKey, { prompt, size, abortSignal })
         }
     };
 
-    const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:predict?key=${apiKey}`, {
+    const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${apiModelName}:predict?key=${apiKey}`, {
         method: "POST",
         headers: {
             "Content-Type": "application/json"
@@ -83,7 +88,11 @@ export async function generateImageGemini(apiKey, { prompt, size, abortSignal })
         // Gemini returns JPEG by default for base64 output
         return { blob: b64ToBlob(b64, "image/jpeg"), mime: "image/jpeg" };
     } else {
-        throw new Error("No image data returned from Gemini");
+        console.error("Vibe Actor | Gemini API raw response:", data);
+        if (data?.safetyRatings) {
+            throw new Error("Image generation was blocked by AI safety filters.");
+        }
+        throw new Error("No image data returned from Gemini. See console for details.");
     }
 }
 
@@ -92,15 +101,15 @@ export async function generateAndSetActorImage(actor, apiKey, options) {
     await saveAndSetActor(actor, blob, "final", options.saveDir, options.storageSrc, mime);
 }
 
-export async function generateAndSetGeminiActorImage(actor, apiKey, options) {
-    const { blob, mime } = await generateImageGemini(apiKey, options);
+export async function generateAndSetGeminiActorImage(actor, apiKey, model, options) {
+    const { blob, mime } = await generateImageGemini(apiKey, model, options);
     await saveAndSetActor(actor, blob, "final", options.saveDir, options.storageSrc, mime);
 }
 
 export async function generateAndSaveItemImage(itemName, apiKey, model, options) {
     let result;
-    if (model === "imagen-3") {
-        result = await generateImageGemini(apiKey, options);
+    if (model.includes("imagen")) {
+        result = await generateImageGemini(apiKey, model, options);
     } else {
         result = await generateImageOpenAI(apiKey, options);
     }
@@ -142,7 +151,8 @@ export async function uploadBlobToFoundry(blob, filename, directory, source = "d
     directory = directory.replace(/\\/g, "/").replace(/\/+/g, "/").replace(/(^\/|\/$)/g, "");
     const file = new File([blob], filename, { type: mime });
     await ensureDirectoryExists(source, directory);
-    const result = await FilePicker.upload(source, directory, file, { notify: false });
+    const FP = foundry.applications?.apps?.FilePicker?.implementation || FilePicker;
+    const result = await FP.upload(source, directory, file, { notify: false });
     if (!result?.path) throw new Error("Upload failed: no path returned.");
     return result.path;
 }
@@ -150,14 +160,15 @@ export async function uploadBlobToFoundry(blob, filename, directory, source = "d
 export async function ensureDirectoryExists(source, dir) {
     const segments = dir.split("/").filter(Boolean);
     let current = "";
+    const FP = foundry.applications?.apps?.FilePicker?.implementation || FilePicker;
     for (const seg of segments) {
         const next = current ? `${current}/${seg}` : seg;
         let exists = true;
-        try { await FilePicker.browse(source, next); }
+        try { await FP.browse(source, next); }
         catch { exists = false; }
         if (!exists) {
-            await FilePicker.createDirectory(source, next).catch(async () => {
-                await FilePicker.browse(source, next);
+            await FP.createDirectory(source, next).catch(async () => {
+                await FP.browse(source, next);
             });
         }
         current = next;

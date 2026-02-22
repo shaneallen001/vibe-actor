@@ -224,14 +224,14 @@ export class VibeActorDialog {
           // Since NPC generation is entirely LLM-based and we don't know the name yet, we can't fully parallelize 
           // without modifying the whole pipeline (or generating a generic name first).
           // Given the requirements, we'll run the AI prompt for the image at the same time as the AI prompt for the stats!
-          const imgService = await import("../services/image-generation-service.js");
+          const imgService = await import("../../services/image-generation-service.js");
           const settingsMod = await import("../../../vibe-common/scripts/settings.js");
 
           const { generateAndSetActorImage, generateAndSetGeminiActorImage } = imgService;
           const { getOpenAiApiKey, getGeminiApiKey, getImageGenerationModel } = settingsMod;
           let imageApiKey;
           try {
-            imageApiKey = model === "imagen-3" ? getGeminiApiKey() : getOpenAiApiKey();
+            imageApiKey = model.includes("imagen") ? getGeminiApiKey() : getOpenAiApiKey();
           } catch (e) {
             return null;
           }
@@ -256,8 +256,8 @@ export class VibeActorDialog {
             getActiveTokens: () => []
           };
 
-          if (model === "imagen-3") {
-            await generateAndSetGeminiActorImage(dummyActor, imageApiKey, genOptions);
+          if (model.includes("imagen")) {
+            await generateAndSetGeminiActorImage(dummyActor, imageApiKey, model, genOptions);
           } else {
             await generateAndSetActorImage(dummyActor, imageApiKey, genOptions);
           }
