@@ -1,5 +1,9 @@
 # Changelog
 
+## [1.3.0] - Stability & Suite Synchronization
+- Finalized Phase 2 stability polish and architectural synchronization.
+- Unified versioning across the Vibe module suite.
+
 ## [1.2.0] - Agent Workflows & Stability Improvements
 - Integrated standardized agent workflows for development and release.
 - Refined item/feature generation prompt logic for more accurate Active Effect outputs.
