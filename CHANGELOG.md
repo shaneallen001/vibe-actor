@@ -1,5 +1,10 @@
 # Changelog
 
+## [1.2.0] - Agent Workflows & Stability Improvements
+- Integrated standardized agent workflows for development and release.
+- Refined item/feature generation prompt logic for more accurate Active Effect outputs.
+- Synchronized image generation model selection with `vibe-common` settings.
+
 ## [1.1.0] - Phase 2 Polish & Architecture Updates
 - Improved item and feature generation schema handling for AI
 - Migrated UI components to `onChange` listeners and resolved legacy `onClick` issues
