@@ -13,7 +13,7 @@ export class ImageGenerator {
     const model = getImageGenerationModel();
     let apiKey;
     try {
-      if (model.includes("imagen")) {
+      if (!model.includes("dall-e")) {
         apiKey = getGeminiApiKey();
       } else {
         apiKey = getOpenAiApiKey();
@@ -75,7 +75,7 @@ export class ImageGenerator {
         abortSignal: controller.signal
       };
 
-      if (model.includes("imagen")) {
+      if (!model.includes("dall-e")) {
         await generateAndSetGeminiActorImage(actor, apiKey, model, genOptions);
       } else {
         await generateAndSetActorImage(actor, apiKey, genOptions);

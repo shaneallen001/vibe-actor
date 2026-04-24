@@ -8,7 +8,7 @@ import { getCrOptions, CREATURE_TYPES, SIZE_OPTIONS } from "../../constants.js";
 import { GeminiPipeline } from "../../services/gemini-pipeline.js";
 import { ensureItemHasId, ensureActivityIds } from "../../factories/actor-factory.js";
 import { ImageGenerator } from "../image-generator.js";
-import { getGeminiApiKey } from "../../../../vibe-common/scripts/settings.js";
+import { getGeminiApiKey, getArtStylePresets } from "../../../../vibe-common/scripts/settings.js";
 
 export class VibeActorDialog {
   static async show() {
@@ -20,6 +20,7 @@ export class VibeActorDialog {
     }
 
     // Generate context for template
+    const stylePresets = getArtStylePresets();
     const context = {
       crOptions: [
         { value: "", label: "Any" },
@@ -32,7 +33,10 @@ export class VibeActorDialog {
       sizeOptions: [
         { value: "", label: "Any" },
         ...SIZE_OPTIONS.map(s => ({ value: s, label: s, selected: s === "Medium" }))
-      ]
+      ],
+      stylePresets,
+      showStylePreset: stylePresets.length > 1,
+      firstPresetStyle: stylePresets[0]?.style ?? ""
     };
 
     const content = await renderTemplate("modules/vibe-actor/templates/vibe-actor-dialog.html", context);
@@ -57,7 +61,7 @@ export class VibeActorDialog {
             if (generateImage) {
               const imageSubject = html.find('[name="imageSubject"]').val()?.trim();
               const imageDesc = html.find('[name="imageDesc"]').val()?.trim();
-              const finalPrompt = (imageSubject || imageDesc) ? [imageSubject, imageDesc].filter(Boolean).join(": ") : "";
+              const finalPrompt = (imageSubject || imageDesc) ? [imageSubject, imageDesc].filter(Boolean).join(". ") : "";
               const transparentBg = html.find('[name="transparentBg"]').is(":checked");
 
               imageOptions = {
@@ -121,6 +125,13 @@ export class VibeActorDialog {
             btn.prop('disabled', false);
             icon.removeClass('fa-spinner fa-spin').addClass('fa-magic');
           }
+        });
+
+        // Wire art style preset dropdown → imageDesc textarea
+        html.find('[name="imageStylePreset"]').on("change", (ev) => {
+          const idx = parseInt(ev.currentTarget.value, 10);
+          const style = stylePresets[idx]?.style ?? "";
+          html.find('[name="imageDesc"]').val(style);
         });
 
         // Handle toggling of the image generation options

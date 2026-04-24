@@ -49,7 +49,9 @@ When the user says "finish session" or similar:
 1.  **Update `current-state.md`**: Reflect the latest status.
 2.  **Update `progress.md`**: Log completed milestones.
 3.  **Update `NOTES_NEXT_SESSION.md`**: Write clear instructions for the "next you".
-4.  **Cleanup**: Remove temp files or logs.
+4.  **Update `README.md`** (only if needed): Add new developer gotchas, architectural
+    changes, or feature descriptions. Do NOT add changelog-style entries — that's
+    what `progress.md` is for.
 
 ## 🚀 Self-Improvement Directive (The "Gardener")
 

@@ -36,10 +36,20 @@
             <label for="imageSubject" style="font-size: 12px;">Subject (short)</label>
             <input name="imageSubject" type="text" placeholder="e.g., Elf ranger">
         </div>
+        {{#if showStylePreset}}
+        <div class="form-group" style="margin-bottom: 8px;">
+            <label style="font-size: 12px;">Art Style Preset</label>
+            <select name="imageStylePreset">
+                {{#each stylePresets}}
+                <option value="{{@index}}">{{this.name}}</option>
+                {{/each}}
+            </select>
+        </div>
+        {{/if}}
         <div class="form-group" style="margin-bottom: 8px;">
             <label for="imageDesc" style="font-size: 12px;">Image Style / Details</label>
             <textarea name="imageDesc" rows="2" placeholder="Pose, gear, lighting, background, art style..."
-                style="min-height: 50px;"></textarea>
+                style="min-height: 50px;">{{firstPresetStyle}}</textarea>
         </div>
         <div class="form-group checkbox-wrapper" style="height: auto; margin-top: 4px;">
             <input type="checkbox" name="transparentBg" id="transparentBg" checked>

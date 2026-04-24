@@ -6,22 +6,34 @@
 export async function generateImageOpenAI(apiKey, { prompt, size, abortSignal }) {
     const OPENAI_MODEL = "dall-e-3";
 
-    const resp = await fetch("https://api.openai.com/v1/images/generations", {
-        method: "POST",
-        headers: {
-            "Authorization": `Bearer ${apiKey}`,
-            "Content-Type": "application/json",
-            "Accept": "application/json"
-        },
-        body: JSON.stringify({
-            model: OPENAI_MODEL,
-            prompt,
-            size,
-            n: 1,
-            response_format: "b64_json"
-        }),
-        signal: abortSignal
-    });
+    let resp;
+    try {
+        resp = await fetch("https://api.openai.com/v1/images/generations", {
+            method: "POST",
+            headers: {
+                "Authorization": `Bearer ${apiKey}`,
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            },
+            body: JSON.stringify({
+                model: OPENAI_MODEL,
+                prompt,
+                size,
+                n: 1,
+                response_format: "b64_json"
+            }),
+            signal: abortSignal
+        });
+    } catch (e) {
+        if (e instanceof TypeError) {
+            throw new Error(
+                "DALL-E 3 cannot be called directly from the browser due to CORS restrictions. " +
+                "Switch to a Gemini image model (Imagen 3, Imagen 4, or Gemini Image Preview) in " +
+                "Module Settings → Vibe Common → Image Generation Model."
+            );
+        }
+        throw e;
+    }
 
     if (!resp.ok) {
         const data = await resp.json().catch(() => ({}));
@@ -44,9 +56,35 @@ export async function generateImageOpenAI(apiKey, { prompt, size, abortSignal })
 }
 
 export async function generateImageGemini(apiKey, model, { prompt, size, abortSignal }) {
-    // Size mapping for Imagen 4
-    let aspectRatio = "1:1";
+    // Gemini-native image models (e.g. gemini-3.1-flash-image-preview) use generateContent
+    if (model.startsWith("gemini")) {
+        const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                contents: [{ parts: [{ text: prompt }] }],
+                generationConfig: { responseModalities: ["IMAGE", "TEXT"] }
+            }),
+            signal: abortSignal
+        });
 
+        if (!resp.ok) {
+            const data = await resp.json().catch(() => ({}));
+            throw new Error(`Gemini error ${resp.status}: ${data?.error?.message || resp.statusText}`);
+        }
+
+        const data = await resp.json();
+        const parts = data?.candidates?.[0]?.content?.parts || [];
+        const imagePart = parts.find(p => p.inlineData?.mimeType?.startsWith("image/"));
+        if (imagePart) {
+            const mime = imagePart.inlineData.mimeType;
+            return { blob: b64ToBlob(imagePart.inlineData.data, mime), mime };
+        }
+        console.error("Vibe Actor | Gemini API raw response:", data);
+        throw new Error("No image data returned from Gemini. See console for details.");
+    }
+
+    // Imagen models use the :predict endpoint
     let apiModelName = model;
     if (model === "imagen-4") {
         apiModelName = "imagen-4.0-generate-001";
@@ -54,25 +92,13 @@ export async function generateImageGemini(apiKey, model, { prompt, size, abortSi
         apiModelName = "imagen-3.0-generate-001";
     }
 
-    const requestBody = {
-        instances: [
-            {
-                prompt: prompt
-            }
-        ],
-        parameters: {
-            sampleCount: 1,
-            aspectRatio: aspectRatio,
-            personGeneration: "ALLOW_ADULT"
-        }
-    };
-
     const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${apiModelName}:predict?key=${apiKey}`, {
         method: "POST",
-        headers: {
-            "Content-Type": "application/json"
-        },
-        body: JSON.stringify(requestBody),
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+            instances: [{ prompt }],
+            parameters: { sampleCount: 1, aspectRatio: "1:1", personGeneration: "ALLOW_ADULT" }
+        }),
         signal: abortSignal
     });
 
@@ -85,7 +111,6 @@ export async function generateImageGemini(apiKey, model, { prompt, size, abortSi
     const b64 = data?.predictions?.[0]?.bytesBase64Encoded;
 
     if (b64) {
-        // Gemini returns JPEG by default for base64 output
         return { blob: b64ToBlob(b64, "image/jpeg"), mime: "image/jpeg" };
     } else {
         console.error("Vibe Actor | Gemini API raw response:", data);
@@ -108,7 +133,7 @@ export async function generateAndSetGeminiActorImage(actor, apiKey, model, optio
 
 export async function generateAndSaveItemImage(itemName, apiKey, model, options) {
     let result;
-    if (model.includes("imagen")) {
+    if (!model.includes("dall-e")) {
         result = await generateImageGemini(apiKey, model, options);
     } else {
         result = await generateImageOpenAI(apiKey, options);
