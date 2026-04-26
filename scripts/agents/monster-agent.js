@@ -6,6 +6,8 @@ export class MonsterAgent extends GenerativeAgent {
         super(apiKey, MonsterActorSchema);
     }
 
+    get schemaConstraint() { return false; }
+
     get systemPrompt() {
         return `You are an expert D&D 5e monster designer and Foundry VTT item builder.
 Your task is to design a complete D&D 5e NPC/monster AND generate all of its Foundry VTT item data in a single JSON output.
