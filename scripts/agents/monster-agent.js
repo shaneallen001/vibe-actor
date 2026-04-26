@@ -8,6 +8,30 @@ export class MonsterAgent extends GenerativeAgent {
 
     get schemaConstraint() { return false; }
 
+    preprocessJson(json) {
+        // Auto-merge { blueprint: {...}, items: [...] } pattern
+        if (!json.name && json.blueprint && typeof json.blueprint === "object") {
+            json = { ...json.blueprint, items: json.items || json.blueprint.items || [] };
+        }
+        // Auto-unwrap single-key wrapper ({ blueprint: { name, items, ... } })
+        if (!json.name && !json.items && Object.keys(json).length === 1) {
+            json = json[Object.keys(json)[0]];
+        }
+        // Fix items.system.description: ensure it's { value: string } not a plain string
+        if (Array.isArray(json.items)) {
+            json.items = json.items.map(item => {
+                if (item.system?.description && typeof item.system.description === "string") {
+                    item.system.description = { value: item.system.description };
+                }
+                if (item.system && !item.system.description) {
+                    item.system.description = { value: "" };
+                }
+                return item;
+            });
+        }
+        return json;
+    }
+
     get systemPrompt() {
         return `You are an expert D&D 5e monster designer and Foundry VTT item builder.
 Your task is to design a complete D&D 5e NPC/monster AND generate all of its Foundry VTT item data in a single JSON output.
@@ -50,6 +74,8 @@ ITEM TYPE RULES:
 - Armor/shields → type "equipment"
 
 CRITICAL RULES:
+- Output a FLAT JSON object. Do NOT wrap fields in a "blueprint", "creature", "npc", or any other key. Start directly with { "name": "...", "cr": ..., "items": [...] }.
+- system.description for items MUST be { "value": "string" } — an object with a "value" key, NOT a plain string.
 - "_id" must be a unique non-empty string (use any 16-char alphanumeric placeholder; it will be replaced).
 - Do NOT generate root-level "system.activation" — all activation goes inside the activity.
 - "system.activities" MUST be an array of activity objects (will be converted to a map automatically).

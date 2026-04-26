@@ -10,6 +10,8 @@ export class GenerativeAgent {
 
     get schemaConstraint() { return true; }
 
+    preprocessJson(json) { return json; }
+
     get systemPrompt() {
         return "You are a helpful AI assistant.";
     }
@@ -35,6 +37,7 @@ export class GenerativeAgent {
                 });
 
                 let json = extractJson(text);
+                json = this.preprocessJson(json);
 
                 if (this.schema._def.typeName === "ZodArray" && !Array.isArray(json) && typeof json === "object") {
                     console.warn("Vibe Actor | Auto-correcting: Wrapped single object in Array to match schema.");
