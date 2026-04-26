@@ -3,6 +3,7 @@ import { getCrOptions, CREATURE_TYPES, SIZE_OPTIONS } from "../../constants.js";
 import { GeminiPipeline } from "../../services/gemini-pipeline.js";
 import { ImageGenerator } from "../image-generator.js";
 import { getGeminiApiKey, getArtStylePresets } from "../../../../vibe-common/scripts/settings.js";
+import { getUseDirectPipeline } from "../../settings.js";
 
 const { ApplicationV2, HandlebarsApplicationMixin, DialogV2 } = foundry.applications.api;
 
@@ -48,7 +49,8 @@ export class VibeActorDialog extends HandlebarsApplicationMixin(ApplicationV2) {
       ],
       stylePresets: this.#stylePresets,
       showStylePreset: this.#stylePresets.length > 1,
-      firstPresetStyle: this.#stylePresets[0]?.style ?? ""
+      firstPresetStyle: this.#stylePresets[0]?.style ?? "",
+      useDirectPipeline: getUseDirectPipeline()
     };
   }
 
@@ -134,11 +136,12 @@ export class VibeActorDialog extends HandlebarsApplicationMixin(ApplicationV2) {
 
     await VibeActorDialog.generateActor(
       data.cr, data.type, data.size, prompt,
-      Boolean(data.generateImage), imageOptions, Boolean(data.generateItemImages)
+      Boolean(data.generateImage), imageOptions, Boolean(data.generateItemImages),
+      Boolean(data.useDirectPipeline)
     );
   }
 
-  static async generateActor(cr, type, size, prompt, generateImage, imageOptions, generateItemImages = false) {
+  static async generateActor(cr, type, size, prompt, generateImage, imageOptions, generateItemImages = false, useDirect = false) {
     let apiKey;
     try { apiKey = getGeminiApiKey(); } catch (e) { return; }
 
@@ -179,23 +182,29 @@ export class VibeActorDialog extends HandlebarsApplicationMixin(ApplicationV2) {
 
       const pipeline = new GeminiPipeline(apiKey);
       const generationTasks = [
-        pipeline.generateActor(
-          { cr, type, size, prompt },
-          { abortSignal: controller.signal, generateItemImages, onProgress: updateProgress }
-        )
+        useDirect
+          ? pipeline.generateActorDirect(
+              { cr, type, size, prompt },
+              { abortSignal: controller.signal, generateItemImages, onProgress: updateProgress }
+            )
+          : pipeline.generateActor(
+              { cr, type, size, prompt },
+              { abortSignal: controller.signal, generateItemImages, onProgress: updateProgress }
+            )
       ];
 
       let generatedImageBlobPath = null;
       if (generateImage) {
         generationTasks.push((async () => {
           const imgService = await import("../../services/image-generation-service.js");
-          const settingsMod = await import("../../../vibe-common/scripts/settings.js");
+          const settingsMod = await import("../../../../vibe-common/scripts/settings.js");
           const { generateAndSetActorImage, generateAndSetGeminiActorImage } = imgService;
           const { getOpenAiApiKey, getGeminiApiKey: getGKey, getImageGenerationModel } = settingsMod;
           const model = getImageGenerationModel();
+          const useGemini = model !== "dall-e-3";
           let imageApiKey;
           try {
-            imageApiKey = model.includes("imagen") ? getGKey() : getOpenAiApiKey();
+            imageApiKey = useGemini ? getGKey() : getOpenAiApiKey();
           } catch (e) { return null; }
 
           const genOptions = {
@@ -212,7 +221,7 @@ export class VibeActorDialog extends HandlebarsApplicationMixin(ApplicationV2) {
             isToken: false,
             getActiveTokens: () => []
           };
-          if (model.includes("imagen")) {
+          if (useGemini) {
             await generateAndSetGeminiActorImage(dummyActor, imageApiKey, model, genOptions);
           } else {
             await generateAndSetActorImage(dummyActor, imageApiKey, genOptions);
