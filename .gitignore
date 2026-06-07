@@ -1,0 +1,22 @@
+# Dependencies
+node_modules/
+
+# Debug / test artifacts
+console-errors-all.txt
+console-warnings-all.txt
+test_output.txt
+localhost-*.txt
+Error Logs/
+*.png
+!icon.png
+
+# Playwright
+.playwright-mcp/
+
+# Workspace file
+*.code-workspace
+
+# Env
+.env
+.env.local
+.env.*.local

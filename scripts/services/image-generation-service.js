@@ -1,0 +1,213 @@
+/**
+ * Image Generation Service
+ * Handles generating images for actors using OpenAI's DALL-E 3 (or compatible API)
+ */
+
+export async function generateImageOpenAI(apiKey, { prompt, size, abortSignal }) {
+    const OPENAI_MODEL = "dall-e-3";
+
+    let resp;
+    try {
+        resp = await fetch("https://api.openai.com/v1/images/generations", {
+            method: "POST",
+            headers: {
+                "Authorization": `Bearer ${apiKey}`,
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            },
+            body: JSON.stringify({
+                model: OPENAI_MODEL,
+                prompt,
+                size,
+                n: 1,
+                response_format: "b64_json"
+            }),
+            signal: abortSignal
+        });
+    } catch (e) {
+        if (e instanceof TypeError) {
+            throw new Error(
+                "DALL-E 3 cannot be called directly from the browser due to CORS restrictions. " +
+                "Switch to a Gemini image model (Imagen 3, Imagen 4, or Gemini Image Preview) in " +
+                "Module Settings → Vibe Common → Image Generation Model."
+            );
+        }
+        throw e;
+    }
+
+    if (!resp.ok) {
+        const data = await resp.json().catch(() => ({}));
+        throw new Error(`OpenAI error ${resp.status}: ${data?.error?.message || resp.statusText}`);
+    }
+
+    const data = await resp.json();
+    const item = data?.data?.[0];
+    const b64 = item?.b64_json;
+    const url = item?.url;
+
+    if (b64) {
+        return { blob: b64ToBlob(b64, "image/png"), mime: "image/png" };
+    } else if (url) {
+        const blob = await (await fetch(url)).blob();
+        return { blob, mime: "image/png" };
+    } else {
+        throw new Error("No image data returned from OpenAI");
+    }
+}
+
+export async function generateImageGemini(apiKey, model, { prompt, size, abortSignal }) {
+    // Gemini-native image models (e.g. gemini-3.1-flash-image-preview) use generateContent
+    if (model.startsWith("gemini")) {
+        const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                contents: [{ parts: [{ text: prompt }] }],
+                generationConfig: { responseModalities: ["IMAGE", "TEXT"] }
+            }),
+            signal: abortSignal
+        });
+
+        if (!resp.ok) {
+            const data = await resp.json().catch(() => ({}));
+            throw new Error(`Gemini error ${resp.status}: ${data?.error?.message || resp.statusText}`);
+        }
+
+        const data = await resp.json();
+        const parts = data?.candidates?.[0]?.content?.parts || [];
+        const imagePart = parts.find(p => p.inlineData?.mimeType?.startsWith("image/"));
+        if (imagePart) {
+            const mime = imagePart.inlineData.mimeType;
+            return { blob: b64ToBlob(imagePart.inlineData.data, mime), mime };
+        }
+        console.error("Vibe Actor | Gemini API raw response:", data);
+        throw new Error("No image data returned from Gemini. See console for details.");
+    }
+
+    // Imagen models use the :predict endpoint
+    let apiModelName = model;
+    if (model === "imagen-4") {
+        apiModelName = "imagen-4.0-generate-001";
+    } else if (model === "imagen-3") {
+        apiModelName = "imagen-3.0-generate-001";
+    }
+
+    const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${apiModelName}:predict?key=${apiKey}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+            instances: [{ prompt }],
+            parameters: { sampleCount: 1, aspectRatio: "1:1", personGeneration: "ALLOW_ADULT" }
+        }),
+        signal: abortSignal
+    });
+
+    if (!resp.ok) {
+        const data = await resp.json().catch(() => ({}));
+        throw new Error(`Gemini error ${resp.status}: ${data?.error?.message || resp.statusText}`);
+    }
+
+    const data = await resp.json();
+    const b64 = data?.predictions?.[0]?.bytesBase64Encoded;
+
+    if (b64) {
+        return { blob: b64ToBlob(b64, "image/jpeg"), mime: "image/jpeg" };
+    } else {
+        console.error("Vibe Actor | Gemini API raw response:", data);
+        if (data?.safetyRatings) {
+            throw new Error("Image generation was blocked by AI safety filters.");
+        }
+        throw new Error("No image data returned from Gemini. See console for details.");
+    }
+}
+
+export async function generateAndSetActorImage(actor, apiKey, options) {
+    const { blob, mime } = await generateImageOpenAI(apiKey, options);
+    await saveAndSetActor(actor, blob, "final", options.saveDir, options.storageSrc, mime);
+}
+
+export async function generateAndSetGeminiActorImage(actor, apiKey, model, options) {
+    const { blob, mime } = await generateImageGemini(apiKey, model, options);
+    await saveAndSetActor(actor, blob, "final", options.saveDir, options.storageSrc, mime);
+}
+
+export async function generateAndSaveItemImage(itemName, apiKey, model, options) {
+    let result;
+    if (!model.includes("dall-e")) {
+        result = await generateImageGemini(apiKey, model, options);
+    } else {
+        result = await generateImageOpenAI(apiKey, options);
+    }
+
+    const filenameSlug = (s) => s?.toLowerCase?.().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "") || "item";
+    const base = filenameSlug(itemName);
+    const ext = result.mime === "image/jpeg" ? "jpg" : "png";
+    const filename = `${base}-${Date.now()}-icon.${ext}`;
+
+    return await uploadBlobToFoundry(result.blob, filename, options.saveDir, options.storageSrc, result.mime);
+}
+
+export async function saveAndSetActor(actor, blob, tag, saveDir, storageSrc, mime = "image/png") {
+    const filenameSlug = (s) => s?.toLowerCase?.().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "") || "token";
+    const base = filenameSlug(actor.name);
+    const ext = mime === "image/jpeg" ? "jpg" : "png";
+    const filename = `${base}-${Date.now()}-${tag}.${ext}`;
+
+    const filePath = await uploadBlobToFoundry(blob, filename, saveDir, storageSrc, mime);
+
+    await actor.update({
+        "img": filePath,
+        "prototypeToken.texture.src": filePath
+    });
+
+    if (actor.isToken) {
+        await actor.token.update({ "texture.src": filePath });
+    } else {
+        const tokens = actor.getActiveTokens();
+        for (const token of tokens) {
+            await token.document.update({ "texture.src": filePath });
+        }
+    }
+
+    return filePath;
+}
+
+export async function uploadBlobToFoundry(blob, filename, directory, source = "data", mime = "image/png") {
+    directory = directory.replace(/\\/g, "/").replace(/\/+/g, "/").replace(/(^\/|\/$)/g, "");
+    const file = new File([blob], filename, { type: mime });
+    await ensureDirectoryExists(source, directory);
+    const FP = foundry.applications?.apps?.FilePicker?.implementation || FilePicker;
+    const result = await FP.upload(source, directory, file, { notify: false });
+    if (!result?.path) throw new Error("Upload failed: no path returned.");
+    return result.path;
+}
+
+export async function ensureDirectoryExists(source, dir) {
+    const segments = dir.split("/").filter(Boolean);
+    let current = "";
+    const FP = foundry.applications?.apps?.FilePicker?.implementation || FilePicker;
+    for (const seg of segments) {
+        const next = current ? `${current}/${seg}` : seg;
+        let exists = true;
+        try { await FP.browse(source, next); }
+        catch { exists = false; }
+        if (!exists) {
+            await FP.createDirectory(source, next).catch(async () => {
+                await FP.browse(source, next);
+            });
+        }
+        current = next;
+    }
+}
+
+export function b64ToBlob(b64Data, contentType = "image/png") {
+    const byteChars = atob(b64Data);
+    const byteArrays = [];
+    for (let offset = 0; offset < byteChars.length; offset += 1024) {
+        const slice = byteChars.slice(offset, offset + 1024);
+        const byteNumbers = new Array(slice.length);
+        for (let i = 0; i < slice.length; i++) byteNumbers[i] = slice.charCodeAt(i);
+        byteArrays.push(new Uint8Array(byteNumbers));
+    }
+    return new Blob(byteArrays, { type: contentType });
+}

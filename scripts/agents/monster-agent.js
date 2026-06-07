@@ -47,6 +47,13 @@ STATS & BALANCE:
 - Ensure HP and AC match the CR per the D&D 5e Monster Manual guidelines.
 - Provide rich, evocative descriptions in behavior, appearance, twist, and biography.
 
+BLUEPRINT FIELD FORMATS (use exactly these shapes — wrong types cause validation failures):
+- saves: array of ability strings → "saves": ["str", "dex"]
+- skills: array of {name, value} objects → "skills": [{"name": "athletics", "value": 5}]
+- senses: object with NUMBER values (no units) → "senses": {"darkvision": 60, "blindsight": 0, "tremorsense": 0, "truesight": 0}
+- stats.movement: object with NUMBER values (no units) → "movement": {"walk": 30, "climb": 20, "fly": 0, "swim": 0, "burrow": 0}
+- languages / resistances / immunities: arrays of strings → "languages": ["Common", "Thieves Cant"]
+
 FEATURES LIST (blueprint.features):
 - This is a DESCRIPTION-ONLY list used to inform item generation. Do not rely on it for mechanics — full mechanics go in the items array.
 - For each feature include automation hints (resolution, save, condition, splitActivities, rider) when mechanics are explicit in the description.

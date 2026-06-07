@@ -44,7 +44,7 @@ Hooks.on("getHeaderControlsApplicationV2", (app, controls) => {
       icon: "fas fa-magic",
       label: "Vibe Image",
       action: "vibeImage",
-      onChange: async () => {
+      onClick: async () => {
         try {
           await ImageGenerator.generateImage(actor);
         } catch (error) {
@@ -57,7 +57,7 @@ Hooks.on("getHeaderControlsApplicationV2", (app, controls) => {
       icon: "fas fa-wrench",
       label: "Vibe Adjust",
       action: "vibeAdjustActor",
-      onChange: () => {
+      onClick: () => {
         new VibeAdjustmentDialog(actor).render({ force: true });
       }
     });
